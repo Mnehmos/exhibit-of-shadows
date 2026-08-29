@@ -40,7 +40,7 @@ npx serve .
 
 ## Specimen photo booth
 
-`photo-booth.html` isolates all 11 bundled GLB fish on one controlled studio stage. It automatically centers, horizontally aligns, and normalizes every model for comparison; plays its default animation; provides side, three-quarter, and front views; supports drag/zoom and turntable inspection; and can save the current frame as a PNG.
+`photo-booth.html` isolates all 13 project fish entries on one controlled studio stage: 11 bundled GLBs, the procedural hero clownfish, and the procedural minnow archive specimen. It automatically centers, horizontally aligns, and normalizes every model for comparison; plays available animation; provides side, three-quarter, and front views; supports drag/zoom and turntable inspection; and can save the current frame as a PNG.
 
 Run `npm run capture:specimens` while the local server is on port 8137 to generate a side-profile image for every manifest entry. The same capture sweep runs in GitHub Actions after each deployment.
 
