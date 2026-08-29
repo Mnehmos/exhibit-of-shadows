@@ -9,4 +9,4 @@ Tracked, unfixed, and unashamed. Each issue names its phase. Move to CATALOG Cha
 | K-5 | No runtime error capture in normal play — console errors only visible with devtools | — | Consider onerror → HUD badge |
 | K-6 | Splice tooling hazard: PowerShell 5.1 `Get-Content -Raw` mangled UTF-8 (mojibake) — repaired in v4; future splices must use `-Encoding UTF8` or Node | — | Process note, not user-facing |
 | K-7 | `demo-room` no-op is mounted in production manifest | — | Intentional smoke test (ADR-003 proof); remove if it ever costs anything |
-| K-9 | Hero clownfish is a procedural rendering/material study, not a production photoreal asset | 3 | Replace its geometry with a legally licensed high-detail rig + authored PBR texture set; retain the water, lighting, caustic and capture pipeline |
+| K-9 | Hero clownfish is intentionally stylized and procedural | 3 | The tank and booth now share the graphic asset. Replace only if the art direction changes toward a licensed high-detail rig; water, lighting, caustic and capture pipelines are already reusable |

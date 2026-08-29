@@ -54,7 +54,7 @@ The main hall: a cylinder R 10.8 m × H 12.8 m with the centerpiece tank at its 
 | R1-D02 | Rock | 7 | Icosahedron detail 1, size 0.14–0.32 | *buildHabitat* |
 | R1-D03 | Fish troupe (livestock) | 6–28 (16 default) | 3 GLB species — clownfish 45% / butterfly fish 33% / shark 22% — SkeletonUtils clones from `assets/fish/`; AnimationMixer swim clips beat-linked to velocity; boids + phototaxis + vortex + hard fish↔fish collision | *speciesCatalog, createFish, updateFish, updateAll* |
 | R1-D04 | Food pellets | 12 per feeding | Spheres R 0.035, sink to substrate, removed after 28 s | *feedExhibit, updateFood* |
-| R1-D06 | Hero clownfish quality study | 1 | Visitor-facing lateral patrol; deforming 64×40 body, vertex clownfish bands, micro-scale bump/roughness, clearcoat/iridescence, layered translucent fins, separate eyes/corneas; casts shadows | *createHeroFish, deformBody* |
+| R1-D06 | Hero clownfish quality study | 1 | Visitor-facing lateral patrol; clean axial procedural body with three graphic bands, satin shading, layered fins, expressive eyes and mouth; casts shadows | *createHeroFish* |
 
 ### R1.E — Systems (interactive)
 | ID | System | Notes | Code |
@@ -126,6 +126,7 @@ Near-black room, drifting bell meshes, single upward light; the purest shadow ro
 | Manifest + loop + HUD | `src/main.js` |
 
 ## Changelog
+- **v7.3 — stylized procedural hero pass**: replaced the photoreal-leaning hero attempt with a shared graphic clownfish asset used by both the live tank and photo booth: custom axial silhouette, clean black/white/orange bands, satin materials, expressive eye highlights, readable mouth and softer fin motion; capped body geometry closes front and rear views.
 - **v7.2 — complete specimen catalog**: reusable `src/photobooth/stage.js` now isolates all 13 project fish entries—11 GLB models plus the procedural hero clownfish and procedural minnow archive—with automatic centering, longest-axis alignment and common framing; dedicated `photo-booth.html` adds live animation where available, side/¾/front poses, drag/zoom, turntable and PNG export; `tools/capture-photo-booth.mjs` and visual-smoke CI render the complete catalog after each deployment.
 - **v7.1 — specimen photo booth**: reusable `src/photobooth/stage.js` isolates all 11 GLB models with automatic centering, longest-axis alignment and common framing; dedicated `photo-booth.html` adds live animation, side/¾/front poses, drag/zoom, turntable and PNG export; `tools/capture-photo-booth.mjs` and visual-smoke CI render the full manifest after each deployment.
 - **v7 — Phase 3 quality study started**: one repo-native hero clownfish now patrols the visitor-facing half of the big tank with dense deforming geometry, physical wet materials, micro-scale surface maps, layered fins and wet corneas; glass/water use physical transmission and attenuation; animated procedural surface/caustic cues and a two-light underwater key rig landed; exposure rebalanced; automated GitHub Actions visual-smoke captures verify the deployed WebGL result.

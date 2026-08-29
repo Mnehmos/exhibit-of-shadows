@@ -1,41 +1,90 @@
 import * as THREE from 'three';
 
-const ORANGE=new THREE.Color(0xe84313),WHITE=new THREE.Color(0xf0eadb),BLACK=new THREE.Color(0x090b0c),TMP_COLOR=new THREE.Color();
+const ORANGE=new THREE.Color(0xf05a25),WHITE=new THREE.Color(0xfff4dc),BLACK=new THREE.Color(0x17151a),TMP_COLOR=new THREE.Color();
 function smoothstep(a,b,x){x=THREE.MathUtils.clamp((x-a)/(b-a),0,1);return x*x*(3-2*x);}
-function scaleBump(){
-  const c=document.createElement('canvas');c.width=512;c.height=256;const g=c.getContext('2d');g.fillStyle='#777';g.fillRect(0,0,c.width,c.height);g.lineWidth=1.2;
-  for(let y=-8;y<c.height+12;y+=10){const offset=((y/10)&1)*6;for(let x=-12;x<c.width+12;x+=12){const xx=x+offset,grad=g.createRadialGradient(xx,y,1,xx,y,7);grad.addColorStop(0,'#a5a5a5');grad.addColorStop(.55,'#858585');grad.addColorStop(1,'#555');g.strokeStyle=grad;g.beginPath();g.arc(xx,y,6.5,.12,Math.PI-.12);g.stroke();}}
-  const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(5,4);t.colorSpace=THREE.NoColorSpace;return t;
+
+/* A deliberately graphic clownfish: a clean axial mesh, three hand-placed
+   bands, and a soft satin material. The silhouette does the work here; no
+   scan-style bump, transmission, or noisy roughness maps are needed. */
+function stripeColor(x,y){
+  let nearest=99;
+  for(const center of [.53,.08,-.43])nearest=Math.min(nearest,Math.abs(x-center));
+  if(nearest<.095)TMP_COLOR.copy(WHITE);
+  else if(nearest<.145)TMP_COLOR.copy(BLACK);
+  else TMP_COLOR.copy(ORANGE);
+  const belly=smoothstep(.02,.40,-y)*.16;TMP_COLOR.lerp(WHITE,belly);return TMP_COLOR;
 }
-function roughness(){
-  const c=document.createElement('canvas');c.width=256;c.height=128;const g=c.getContext('2d'),im=g.createImageData(c.width,c.height);let seed=9137;
-  for(let i=0;i<im.data.length;i+=4){seed=(seed*1664525+1013904223)>>>0;const n=88+((seed>>>24)&63);im.data[i]=im.data[i+1]=im.data[i+2]=n;im.data[i+3]=255;}
-  g.putImageData(im,0,0);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(3,2);t.colorSpace=THREE.NoColorSpace;return t;
-}
-function bandColor(x,y){let nearest=99;for(const center of [.47,.02,-.50])nearest=Math.min(nearest,Math.abs(x-center));if(nearest<.105)TMP_COLOR.copy(WHITE);else if(nearest<.155)TMP_COLOR.copy(BLACK);else TMP_COLOR.copy(ORANGE);TMP_COLOR.lerp(WHITE,THREE.MathUtils.clamp((-.05-y)*.45,0,.18));return TMP_COLOR;}
+
 function heroBody(){
-  const geometry=new THREE.SphereGeometry(1,64,40),p=geometry.attributes.position,colors=new Float32Array(p.count*3);
-  for(let i=0;i<p.count;i++){const sx=p.getX(i),sy=p.getY(i),sz=p.getZ(i),head=1+.08*smoothstep(.08,.75,sx);p.setXYZ(i,sx*.88,sy*.39*head,sz*.235*head);const c=bandColor(sx,sy);colors[i*3]=c.r;colors[i*3+1]=c.g;colors[i*3+2]=c.b;}
-  geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));geometry.computeVertexNormals();
-  const material=new THREE.MeshPhysicalMaterial({color:0xffffff,vertexColors:true,roughness:.31,metalness:0,bumpMap:scaleBump(),bumpScale:.014,roughnessMap:roughness(),clearcoat:.58,clearcoatRoughness:.16,iridescence:.075,iridescenceIOR:1.32,iridescenceThicknessRange:[90,210],specularIntensity:.82,emissive:0x1b7775,emissiveIntensity:0});
-  const mesh=new THREE.Mesh(geometry,material);mesh.castShadow=true;mesh.receiveShadow=true;return{mesh,geometry,material,base:new Float32Array(p.array)};
+  const rings=58,sides=28,pos=[],idx=[],colors=[];
+  for(let i=0;i<rings;i++){
+    const q=i/(rings-1),x=-1.02+q*2.04;
+    const tailRise=smoothstep(.02,.25,q),noseTaper=smoothstep(.78,1,q);
+    const fullness=.62+.38*smoothstep(.12,.48,q);
+    const belly=1+.10*Math.sin(q*Math.PI);
+    const ry=(.055+.43*tailRise)*fullness*(1-.18*noseTaper)*belly;
+    const rz=(.035+.245*tailRise)*(.93+.07*smoothstep(.25,.66,q))*(1-.14*noseTaper);
+    for(let j=0;j<sides;j++){
+      const a=j/sides*Math.PI*2,sy=Math.sin(a),sz=Math.cos(a);
+      pos.push(x,sy*ry,sz*rz);
+      const c=stripeColor(x,sy*ry);colors.push(c.r,c.g,c.b);
+    }
+  }
+  const tailCenter=pos.length/3;pos.push(-1.02,0,0);colors.push(ORANGE.r,ORANGE.g,ORANGE.b);
+  const headCenter=pos.length/3;pos.push(1.02,0,0);colors.push(WHITE.r,WHITE.g,WHITE.b);
+  for(let i=0;i<rings-1;i++)for(let j=0;j<sides;j++){
+    const n=(j+1)%sides,a=i*sides+j,b=i*sides+n,c=(i+1)*sides+j,d=(i+1)*sides+n;
+    idx.push(a,c,b,b,c,d);
+  }
+  const tailRing=0,headRing=(rings-1)*sides;
+  for(let j=0;j<sides;j++){
+    const n=(j+1)%sides;idx.push(tailCenter,tailRing+j,tailRing+n);idx.push(headCenter,headRing+n,headRing+j);
+  }
+  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geometry.setIndex(idx);geometry.computeVertexNormals();
+  const material=new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:.38,metalness:.02,emissive:0x123d3a,emissiveIntensity:0.02});
+  const mesh=new THREE.Mesh(geometry,material);mesh.castShadow=true;mesh.receiveShadow=true;
+  return {mesh,geometry,material,base:new Float32Array(pos)};
 }
-function shape(points){const s=new THREE.Shape();s.moveTo(points[0][0],points[0][1]);for(let i=1;i<points.length;i++)s.lineTo(points[i][0],points[i][1]);s.closePath();return new THREE.ShapeGeometry(s,5);}
-function finMaterial(color,opacity){return new THREE.MeshPhysicalMaterial({color,roughness:.27,metalness:0,clearcoat:.45,clearcoatRoughness:.2,transparent:true,opacity,side:THREE.DoubleSide,depthWrite:false,alphaTest:.04});}
-function fin(points,position,rotation=new THREE.Euler()){const group=new THREE.Group();group.position.copy(position);group.rotation.copy(rotation);const edge=new THREE.Mesh(shape(points),finMaterial(0x24100d,.84));edge.castShadow=true;group.add(edge);const inner=new THREE.Mesh(shape(points),finMaterial(0xe45a26,.78));inner.scale.set(.84,.78,1);inner.position.z=.001;inner.castShadow=true;group.add(inner);return group;}
-function eye(side){const root=new THREE.Group();root.position.set(.61,.105,side*.205);const sclera=new THREE.Mesh(new THREE.SphereGeometry(.078,24,16),new THREE.MeshPhysicalMaterial({color:0xb78032,roughness:.24,clearcoat:.65}));sclera.scale.set(.78,1,1);root.add(sclera);const pupil=new THREE.Mesh(new THREE.SphereGeometry(.047,20,14),new THREE.MeshPhysicalMaterial({color:0x010202,roughness:.12,clearcoat:1,clearcoatRoughness:.05}));pupil.position.z=side*.055;root.add(pupil);const cornea=new THREE.Mesh(new THREE.SphereGeometry(.086,24,16),new THREE.MeshPhysicalMaterial({color:0xd8ffff,roughness:.04,transmission:.72,thickness:.018,ior:1.38,transparent:true,opacity:.24,clearcoat:1,clearcoatRoughness:.02,depthWrite:false}));cornea.scale.set(.78,1,1);cornea.position.z=side*.009;root.add(cornea);root.traverse(o=>{if(o.isMesh)o.castShadow=true;});return root;}
+
+function shape(points){const s=new THREE.Shape();s.moveTo(points[0][0],points[0][1]);for(let i=1;i<points.length;i++)s.lineTo(points[i][0],points[i][1]);s.closePath();return new THREE.ShapeGeometry(s,4);}
+function finMaterial(color,opacity){return new THREE.MeshStandardMaterial({color,roughness:.48,metalness:0,transparent:true,opacity,side:THREE.DoubleSide,depthWrite:false});}
+function fin(points,position,rotation=new THREE.Euler(),scale=.86){
+  const group=new THREE.Group();group.position.copy(position);group.rotation.copy(rotation);
+  const edge=new THREE.Mesh(shape(points),finMaterial(BLACK,.94));edge.castShadow=true;group.add(edge);
+  const inner=new THREE.Mesh(shape(points),finMaterial(0xf06b34,.96));inner.scale.set(scale,scale*.9,1);inner.position.z=.002;inner.castShadow=true;group.add(inner);return group;
+}
+function eye(side){
+  const root=new THREE.Group();root.position.set(.72,.145,side*.235);
+  const iris=new THREE.Mesh(new THREE.SphereGeometry(.073,18,12),new THREE.MeshStandardMaterial({color:0xf6b84b,roughness:.28}));iris.scale.set(.86,1,1);root.add(iris);
+  const pupil=new THREE.Mesh(new THREE.SphereGeometry(.041,16,10),new THREE.MeshStandardMaterial({color:0x090a0b,roughness:.2}));pupil.position.z=side*.058;root.add(pupil);
+  const glint=new THREE.Mesh(new THREE.SphereGeometry(.012,8,6),new THREE.MeshBasicMaterial({color:0xffffff}));glint.position.set(.023,.022,side*.085);root.add(glint);
+  root.traverse(o=>{if(o.isMesh)o.castShadow=true;});return root;
+}
+function mouth(side){
+  const curve=new THREE.CatmullRomCurve3([new THREE.Vector3(.985,-.095,side*.235),new THREE.Vector3(.935,-.135,side*.235),new THREE.Vector3(.872,-.118,side*.235)]);
+  const mesh=new THREE.Mesh(new THREE.TubeGeometry(curve,8,.011,6,false),new THREE.MeshStandardMaterial({color:0x1c0f12,roughness:.46}));mesh.castShadow=true;return mesh;
+}
 
 export function createHeroFishSpecimen(){
   const visual=new THREE.Group(),body=heroBody();visual.add(body.mesh);
-  const tail=fin([[0,-.07],[-.34,-.36],[-.29,0],[-.34,.36],[0,.07]],new THREE.Vector3(-.86,0,0));visual.add(tail);
-  visual.add(fin([[-.38,0],[-.22,.28],[.12,.42],[.39,.08],[.36,0]],new THREE.Vector3(0,.31,0)));
-  visual.add(fin([[-.24,0],[-.05,-.20],[.24,-.14],[.34,0]],new THREE.Vector3(-.05,-.30,0)));
-  const left=fin([[0,0],[-.25,-.04],[-.05,.24],[.18,.08]],new THREE.Vector3(.18,-.02,.19),new THREE.Euler(Math.PI/2,-.12,.18));
-  const right=fin([[0,0],[-.25,-.04],[-.05,.24],[.18,.08]],new THREE.Vector3(.18,-.02,-.19),new THREE.Euler(-Math.PI/2,.12,.18));visual.add(left,right,eye(1),eye(-1));
-  const mouth=new THREE.Mesh(new THREE.TorusGeometry(.035,.008,8,24),new THREE.MeshPhysicalMaterial({color:0x170604,roughness:.3,clearcoat:.4}));mouth.rotation.y=Math.PI/2;mouth.position.set(.872,-.04,0);visual.add(mouth);
+  const tail=fin([[0,-.055],[-.27,-.33],[-.36,-.39],[-.28,0],[-.36,.39],[-.27,.33],[0,.055]],new THREE.Vector3(-1.00,0,0),new THREE.Euler(),.90);visual.add(tail);
+  const dorsal=fin([[-.44,0],[-.30,.26],[-.10,.39],[.18,.20],[.34,.045],[.27,0]],new THREE.Vector3(-.04,.39,0),new THREE.Euler(),.85);visual.add(dorsal);
+  const ventral=fin([[-.34,0],[-.15,-.20],[.10,-.24],[.30,-.05],[.23,0]],new THREE.Vector3(-.12,-.39,0),new THREE.Euler(),.83);visual.add(ventral);
+  const leftFin=fin([[.10,0],[-.18,-.03],[-.07,.25],[.16,.18],[.26,.05]],new THREE.Vector3(.20,-.02,.205),new THREE.Euler(Math.PI/2,-.10,.14),.78);
+  const rightFin=fin([[.10,0],[-.18,-.03],[-.07,.25],[.16,.18],[.26,.05]],new THREE.Vector3(.20,-.02,-.205),new THREE.Euler(-Math.PI/2,.10,.14),.78);
+  visual.add(leftFin,rightFin,eye(1),eye(-1),mouth(1),mouth(-1));
   let phase=0,normalTick=0;
-  function update(dt){phase+=dt*5.1;const pos=body.geometry.attributes.position,array=pos.array,base=body.base;for(let i=0;i<pos.count;i++){const j=i*3,x=base[j],y=base[j+1],z=base[j+2],w=smoothstep(.05,.98,(.72-x)/1.58),wave=Math.sin(phase-w*4.5)*(.006+.078*w*w);array[j]=x-z*Math.cos(phase-w*4.5)*.04*w;array[j+1]=y;array[j+2]=z+wave;}pos.needsUpdate=true;if((normalTick++&1)===0)body.geometry.computeVertexNormals();tail.rotation.y=Math.sin(phase-4.55)*.30;left.rotation.z=.18+Math.sin(phase*.53)*.20;right.rotation.z=.18-Math.sin(phase*.53)*.20;}
-  return{scene:visual,animations:[],update,label:'Hero clownfish · procedural quality study',kind:'procedural'};
+  function update(dt){
+    phase+=dt*4.7;const p=body.geometry.attributes.position,array=p.array,base=body.base;
+    for(let i=0;i<p.count;i++){
+      const j=i*3,x=base[j],y=base[j+1],z=base[j+2],tailWeight=smoothstep(-.06,.98,(-x)/1.04),wave=Math.sin(phase-tailWeight*4.25)*(.004+.055*tailWeight*tailWeight);
+      array[j]=x-z*Math.cos(phase-tailWeight*4.25)*.035*tailWeight;array[j+1]=y;array[j+2]=z+wave;
+    }
+    p.needsUpdate=true;if((normalTick++&1)===0)body.geometry.computeVertexNormals();
+    tail.rotation.y=Math.sin(phase-4.45)*.24;dorsal.rotation.z=Math.sin(phase*.52)*.055;ventral.rotation.z=-Math.sin(phase*.52)*.045;
+    leftFin.rotation.z=.14+Math.sin(phase*.63)*.13;rightFin.rotation.z=.14-Math.sin(phase*.63)*.13;
+  }
+  return{scene:visual,animations:[],update,material:body.material,label:'Hero clownfish · stylized procedural',kind:'procedural'};
 }
 
 function minnowMesh(){
