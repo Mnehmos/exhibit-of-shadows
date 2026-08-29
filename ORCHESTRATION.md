@@ -17,9 +17,9 @@ The build plan: how work is sequenced, which workstream owns which catalog IDs, 
 | `README.md` | Run instructions + controls |
 | `ATTRIBUTION.md` | *(created when first non-CC0 asset lands)* credit list |
 
-## 2. Current state (v3)
+## 2. Current state (v5)
 
-Built: Gallery One complete (R1.A–E) with the in-sim stagehand console. **Phase 0 done** — the Silo layer (master core + `roomManifest` + ctx plugin contract) is landed, three.js demoted to pinned render backend (ADR-001/002/003). Shadow discipline pass active (ADR-004). Next: Phase 1, asset pipeline.
+Built: Gallery One complete (R1.A–E) with the in-sim stagehand console and magic systems (E12–E15). **Phase 0 done; ADR-010 adopted** — code lives in a modular file tree (`src/main.js` + `src/core/*` + `src/rooms/r1/*`), three.js pinned via importmap. **Phase 1 ◐** loader wired, awaiting asset pack. Public: https://github.com/Mnehmos/exhibit-of-shadows · https://mnehmos.github.io/exhibit-of-shadows/
 
 ## 3. Workstreams
 
@@ -84,7 +84,7 @@ Near-black room, drifting bell meshes with additive glow, single uplight; purest
 
 ## 5. Conventions (every change)
 
-1. **Single file** stays the rule until Phase 7: rooms live as in-file modules registered in `roomManifest`; Coral Court is the first literal folder plugin (`r7-coral-court/` + dynamic `import()`), and only then do shared systems split into `js/`.
+1. **Modular file tree (ADR-010, supersedes the single-file rule)**: `index.html` is a shell; `src/main.js` is the composition root; `src/core/` holds services; each room owns `src/rooms/<room>/`. The importmap in index.html is the single three.js version pin. Per-item granularity is labeled blocks inside part files; one-file-per-item remains the Phase 7 option.
 2. **Catalog discipline**: new/changed scene objects → update CATALOG row (next free ID in the room's series) + append Changelog line. No scene change without a catalog line.
 3. **IDs**: rooms `R#`, pieces `R#-<section><nn>` (A arch, B fixtures, C display, D habitat, E systems, P planned), displays `D#`.
 4. **Verification before "done"**: extract `<script type="module">` → `node --check` passes; server `python -m http.server 8137` serves the update; manual pass on desktop (mouse-look + WASD + shadow play) and at least one narrow-window check (joystick layout).

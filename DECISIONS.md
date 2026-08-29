@@ -34,3 +34,8 @@ Consequences: adding magic = one declaration; console layout/labels/formats chan
 
 **ADR-009 · magic systems are time-scale aware; the visitor is not** (v4)
 Hall time (`timeScale` slider) scales the world simulation (fish, food, motes, shadow-play breathing) but not visitor walk speed — the guest walks real-time through a slowed or accelerated hall. Player animation and camera stay on real dt.
+
+**ADR-010 · modular file tree adopted — supersedes ADR-002/007 deferral** (v5)
+Context: the owner pulled the ADR-007 trigger ("modularity, especially in files, orchestration and control are paramount") with the project public and stable at v4.
+Decision: `index.html` becomes a shell; code lives in `src/` — `main.js` (composition root), `core/` (state, world, controls, player, input, console, assets, shadows, utils), `rooms/r1/` (constants, architecture, fixtures, display, booth, habitat, minnow, food, systems, index). The importmap is the single three.js version pin; the room manifest stays in `main.js`. Per-item granularity lives *inside* part files as labeled blocks; splitting to one-file-per-item remains available at Phase 7.
+Consequences: catalog Code refs resolve into real files (audit walks the tree); Pages deploys unchanged (relative module paths); adding a room = folder + manifest line, untouched by the split.

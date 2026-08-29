@@ -102,7 +102,25 @@ Near-black room, drifting bell meshes, single upward light; the purest shadow ro
 | D-WALL | R1 perimeter wall | Wide radial silhouettes, ribs cut shadow stripes | R1-C08 + B02 |
 | D-FLOOR / D-CEIL | R1 floor & ceiling | fan/radial shadows | R1-C08 |
 
+## Source map (v5 — code layout)
+
+| Catalog section | File |
+|---|---|
+| R1.A architecture (A01–A05) | `src/rooms/r1/architecture.js` |
+| R1.B furnishings (B01–B04) | `src/rooms/r1/fixtures.js` |
+| R1.B08 console booth | `src/rooms/r1/booth.js` |
+| R1.C display (C01–C10) | `src/rooms/r1/display.js` |
+| R1.D01–D02 habitat | `src/rooms/r1/habitat.js` |
+| R1.D03 minnows | `src/rooms/r1/minnow.js` |
+| R1.D04 food | `src/rooms/r1/food.js` |
+| R1.E systems (E05–E15) | `src/rooms/r1/systems.js` |
+| Room assembly (mount) | `src/rooms/r1/index.js` |
+| R1 geometry constants | `src/rooms/r1/constants.js` |
+| Core services (state/world/controls/player/input/console/assets/shadows) | `src/core/*.js` |
+| Manifest + loop + HUD | `src/main.js` |
+
 ## Changelog
+- **v5 — modular file tree (ADR-010)**: `index.html` is now a shell; code split into `src/main.js`, `src/core/*` (9 services), `src/rooms/r1/*` (10 parts); audit walks the tree; hall time wired into the loop (E13 actually live); deployed Pages unchanged.
 - **v4 — magic systems + declarative console**: control registry (E11) generates the stagehand console; added Impossible things — gravity E12, hall time E13, bioluminescence E14, minnow scale E15; Phase 1 asset pipeline wired (importmap + `loadFishPack`, inert until `assets/fish/manifest.json`); repo git-initialized; STATUS/KNOWN-ISSUES docs added.
 - **v3 — plugin architecture + orientation tools**: Phase 0 landed — master core + `roomManifest` (`r1-gallery-one`, `demo-room`) with ctx contract (ADR-003); stagehand console booth relocated to the 45° sail gap facing the tank (ADR-005: sliders now in-sim only); shadow discipline pass E10, sail cloth now sheer (ADR-004); `tools/audit.mjs` added (ADR-006).
 - **v2 — theme pass**: exhibit renamed; added R1-B04 sails, R1-C06 beam gradient, R1-C09 motes, R1-C10 plaque, R1-E05 shadow play, light-pull phototaxis; darkened A02/A03-adjacent palette.

@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /* drift_audit.mjs — Silo Engine orientation tool (ADR-006).
-   Recomputes alignment between code (index.html), inventory (CATALOG.md),
-   plan (ORCHESTRATION.md), and README.md. Run from project root:
+   Recomputes alignment between code (index.html + src/), inventory
+   (CATALOG.md), plan (ORCHESTRATION.md), and README.md. Run from project root:
        node tools/audit.mjs
    Exit 0 = oriented, exit 1 = drift. */
-import {readFileSync,writeFileSync,unlinkSync} from 'node:fs';
+import {readFileSync,writeFileSync,unlinkSync,readdirSync,statSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import path from 'node:path';
 
@@ -15,24 +15,41 @@ const ok=m=>{oks++;console.log('  [ok]    '+m);};
 const drift=m=>{fails++;console.log('  [DRIFT] '+m);};
 const section=t=>console.log('\n'+t);
 
-const html=read('index.html'),catalog=read('CATALOG.md'),orch=read('ORCHESTRATION.md'),readme=read('README.md');
-for(const[f,doc] of [['index.html',html],['CATALOG.md',catalog],['ORCHESTRATION.md',orch],['README.md',readme],['DECISIONS.md',read('DECISIONS.md')]])
+const html=read('index.html'),catalog=read('CATALOG.md'),orch=read('ORCHESTRATION.md'),readme=read('README.md'),decisions=read('DECISIONS.md');
+for(const[f,doc] of [['index.html',html],['CATALOG.md',catalog],['ORCHESTRATION.md',orch],['README.md',readme],['DECISIONS.md',decisions]])
   doc?ok(`present: ${f}`):drift(`missing file: ${f}`);
 if(!html||!catalog)process.exit(1);
 
+function walkJS(dir){
+  let out=[];
+  for(const e of readdirSync(path.join(root,dir),{withFileTypes:true})){
+    const p=path.join(dir,e.name);
+    if(e.isDirectory())out=out.concat(walkJS(p));
+    else if(e.name.endsWith('.js'))out.push({path:p,code:readFileSync(path.join(root,p),'utf8')});
+  }
+  return out;
+}
+
 section('code ↔ syntax');
-const sm=/<script type="module">([\s\S]*?)<\/script>/.exec(html);
-if(!sm){drift('module script missing');process.exit(1);}
-const js=sm[1];
+if(!/script type="module" src="src\/main\.js"/.test(html))drift('index.html does not load src/main.js');
+else ok('index.html loads src/main.js');
+let jsFiles=[],syntaxBad=0;
+try{jsFiles=walkJS('src');}
+catch{drift('src/ tree missing');process.exit(1);}
+if(!jsFiles.length){drift('src/ has no .js files');process.exit(1);}
 const tmp=path.join(process.env.TEMP||process.env.TMP||'/tmp','silo-audit-check.mjs');
-try{writeFileSync(tmp,js);execFileSync(process.execPath,['--check',tmp]);unlinkSync(tmp);ok('module script parses (node --check)');}
-catch(e){drift('module script fails node --check');console.error(String(e).slice(0,500));}
+for(const f of jsFiles){
+  try{writeFileSync(tmp,f.code);execFileSync(process.execPath,['--check',tmp]);ok(`parses: ${f.path}`);}
+  catch(e){syntaxBad++;drift(`syntax: ${f.path}`);}
+}
+unlinkSync(tmp);
+const js=jsFiles.map(f=>`\n/* ${f.path} */\n${f.code}`).join('\n');
 
 section('catalog → code (every italic code ref must exist)');
-const refAllow=new Set(['italics']);              // prose words that merely use italics
+const refAllow=new Set(['italics']);
 for(const r of [...new Set([...catalog.matchAll(/\*(\w+)\*/g)].map(m=>m[1]))]){
-  if(refAllow.has(r)||/^[A-Z_]+$/.test(r))continue; // skip prose + STATUS WORDS
-  new RegExp('\\b'+r+'\\b').test(js)?ok(`*${r}*`):drift(`catalog ref *${r}* not found in code`);
+  if(refAllow.has(r)||/^[A-Z_]+$/.test(r))continue;
+  new RegExp('\\b'+r+'\\b').test(js)?ok(`*${r}*`):drift(`catalog ref *${r}* not found in src/`);
 }
 
 section('code → plan (rooms and section tags must be documented)');
@@ -61,7 +78,7 @@ for(const d of ['CATALOG.md','ASSETS.md','ORCHESTRATION.md','DECISIONS.md'])
 
 section('plan snapshot');
 for(const ph of [...(orch||'').matchAll(/^### (Phase \d[^\n]*)$/gm)])
-  console.log('  · '+ph[1].replace(/ — ✅.*/,'  [DONE]'));
+  console.log('  · '+ph[1].replace(/ — [◐✅].*/,'  [STARTED/DONE]'));
 
-section(fails?`AUDIT FAILED — ${fails} drift / ${oks} ok`:`AUDIT PASS — ${oks} ok, 0 drift`);
+section(fails?`AUDIT FAILED — ${fails} drift / ${oks} ok`:`AUDIT PASS — ${oks} ok, 0 drift (${jsFiles.length} modules)`);
 process.exit(fails?1:0);
