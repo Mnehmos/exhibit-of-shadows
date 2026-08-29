@@ -9,7 +9,8 @@ Live state. Update at the end of every session.
 
 ## Playtest guide (5 minutes)
 
-1. Walk (WASD / click scene for mouse-look). Visit the stagehand console booth — the glowing podium in the sail gap to the right of the entrance view — press **E**.
+1. Walk (WASD / click scene for mouse-look). **HUD must show `16 minnows` swimming** — if 0, that's a spawn bug, report it.
+2. Visit the stagehand console booth — the glowing podium in the sail gap to the right of the entrance view — press **E**.
 2. Console groups: **Exhibit** (minnows, activity, schooling, light pull, plants), **Impossible things** (gravity, hall time, bioluminescence, minnow scale), **Shadow hall** (central light, shadow softness, gallery light), **Visitor** (walk speed).
 3. Try: Gravity −100% (pellets and fish float up), Hall time 20% (slow-motion silhouettes), Bioluminescence 100% + Shadow play (glowing spirits in a dark hall), Minnow scale 250% (leviathan minnows).
 4. Feed exhibit → Shadow play → watch radial shadows whirl on sails and walls.

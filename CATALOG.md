@@ -120,6 +120,7 @@ Near-black room, drifting bell meshes, single upward light; the purest shadow ro
 | Manifest + loop + HUD | `src/main.js` |
 
 ## Changelog
+- **v5.1 — hotfix**: `syncFish()` restored to init (v5 split dropped it — troupe never spawned); `assets/fish/manifest.json` placeholder kills the console 404; playtest step 1 asserts the minnow count.
 - **v5 — modular file tree (ADR-010)**: `index.html` is now a shell; code split into `src/main.js`, `src/core/*` (9 services), `src/rooms/r1/*` (10 parts); audit walks the tree; hall time wired into the loop (E13 actually live); deployed Pages unchanged.
 - **v4 — magic systems + declarative console**: control registry (E11) generates the stagehand console; added Impossible things — gravity E12, hall time E13, bioluminescence E14, minnow scale E15; Phase 1 asset pipeline wired (importmap + `loadFishPack`, inert until `assets/fish/manifest.json`); repo git-initialized; STATUS/KNOWN-ISSUES docs added.
 - **v3 — plugin architecture + orientation tools**: Phase 0 landed — master core + `roomManifest` (`r1-gallery-one`, `demo-room`) with ctx contract (ADR-003); stagehand console booth relocated to the 45° sail gap facing the tank (ADR-005: sliders now in-sim only); shadow discipline pass E10, sail cloth now sheer (ADR-004); `tools/audit.mjs` added (ADR-006).

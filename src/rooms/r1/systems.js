@@ -53,6 +53,6 @@ export function initSystems(parts){
   registerStatus(()=>'assets: '+assets.status);
 
   centralBase=val('lightPower');centralLight.intensity=centralBase;centralLight.shadow.radius=1+val('shadowSoft')/12;applyGallery();
-  setGlow(val('glow'));setScale(val('fishScale'));
+  syncFish();setGlow(val('glow'));setScale(val('fishScale'));
   loadFishPack().then(()=>{/* Phase 2: swap GLB models in when a pack lands in assets/fish */});
 }
