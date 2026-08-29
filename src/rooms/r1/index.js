@@ -12,6 +12,7 @@ import {initHabitat} from './habitat.js';
 import {initTroupe,fish,updateAll} from './troupe.js';
 import {initFood} from './food.js';
 import {initSystems} from './systems.js';
+import {createHeroFish} from './heroFish.js';
 
 /* ROOM r1-gallery-one · "The Exhibit of Shadows" — master exhibit hall.
    Assembly only: parts build, this file collects and wires. */
@@ -27,6 +28,7 @@ export function mount(){
 
   const habitat=new THREE.Group(),fishGroup=new THREE.Group(),foodGroup=new THREE.Group();
   disp.aquarium.add(habitat,fishGroup,foodGroup);
+  const hero=createHeroFish(disp.aquarium);
   const {buildHabitat}=initHabitat(habitat);
   initTroupe(fishGroup);
   initFood(foodGroup);
@@ -35,8 +37,10 @@ export function mount(){
   onFrame((dt,t)=>{
     disp.updateMotes(dt);
     updateAll(dt,t);
+    hero.update(dt,t);
   });
   registerStatus(()=>fish.length+' fish · '+fish.filter(f=>f.state==='feed').length+' feeding');
+  registerStatus(()=>hero.label);
   registerStatus(()=>'assets: '+assets.status);
 
   readout.innerHTML='<strong>The Exhibit of Shadows.</strong> A single shadow-casting PointLight burns at the heart of the tank — the only instrument in the hall. Its six-direction shadow map throws every minnow, plant, and visitor onto eight hanging sails, the gallery wall, floor, and ceiling. Physics bends around the core: the <em>Light pull</em> slider tugs the school into orbit like moths, and <em>Shadow play</em> dims the gallery, sets the core breathing, and winds the fish into a slow vortex of silhouettes. The stagehand console bends physics itself — gravity, hall time, bioluminescence, minnow scale.';
