@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {state} from '../../core/state.js';
 import {val} from '../../core/controls.js';
-import {createHeroFishSpecimen as createStylizedHero} from '../../photobooth/procedural.js';
+import {createHeroFishSpecimen as createStylizedHero} from '../../photobooth/heroClownfish.js';
 
 /* R1.D06 — hero clownfish quality study.
    The tank and photo booth intentionally share one repo-native, stylized

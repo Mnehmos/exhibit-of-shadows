@@ -31,14 +31,24 @@ jobs:
       - name: Capture changed scope
         run: |
           changed="$(git diff-tree --no-commit-id --name-only -r HEAD)"
-          if [ -n "$changed" ] && ! printf '%s\n' "$changed" | grep -Evq '^(src/photobooth/procedural\.js|src/rooms/r1/heroFish\.js|tools/capture-photo-booth\.mjs|\.github/workflows/visual-smoke\.yml)$'; then
+          targets="$(printf '%s\n' "$changed" | while read -r path; do
+            case "$path" in
+              src/photobooth/heroClownfish.js) echo 'hero-clownfish.procedural' ;;
+              src/photobooth/minnow.js) echo 'minnow.procedural' ;;
+              src/photobooth/specimens/*.js) basename "$path" .js ;;
+              assets/fish/*.glb) basename "$path" ;;
+            esac
+          done | sort -u | paste -sd, -)"
+          selective=true
+          if [ -z "$targets" ]; then selective=false; fi
+          if printf '%s\n' "$changed" | grep -Evq '^(src/photobooth/(heroClownfish|minnow|procedural|main)\.js|src/photobooth/specimens/[^/]+\.js|src/rooms/r1/heroFish\.js|tools/capture-photo-booth\.mjs|\.github/workflows/visual-smoke\.yml|assets/fish/[^/]+\.glb|assets/fish/manifest\.json)$'; then selective=false; fi
+          if [ "$selective" = false ]; then
             echo 'Capture scope: full'
             node tools/capture-exhibit.mjs --url=http://127.0.0.1:8137 --scenarios=default,shadowplay --views=hero --settle=1800 --out=evidence/ci-capture
             node tools/capture-photo-booth.mjs --url=http://127.0.0.1:8137 --out=evidence/ci-photo-booth
           else
-            echo 'Capture scope: hero'
-            node tools/capture-exhibit.mjs --url=http://127.0.0.1:8137 --scenarios=default --views=hero --settle=700 --out=evidence/ci-capture
-            node tools/capture-photo-booth.mjs --url=http://127.0.0.1:8137 --files=hero-clownfish.procedural,minnow.procedural --out=evidence/ci-photo-booth
+            echo "Capture scope: $targets"
+            node tools/capture-photo-booth.mjs --url=http://127.0.0.1:8137 --files="$targets" --out=evidence/ci-photo-booth
           fi
       - uses: actions/upload-artifact@v4
         if: always()
