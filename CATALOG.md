@@ -49,7 +49,7 @@ The main hall: a cylinder R 10.8 m × H 12.8 m with the centerpiece tank at its 
 |---|---|---|---|---|
 | R1-D01 | Stem plant + leaves | 6 + density slider (17 @ default 58%) | Stem R 0.025–0.055, H 0.8–2.5, 5 leaves each, 4 greens; rebuilt on slider change | *buildHabitat* |
 | R1-D02 | Rock | 7 | Icosahedron detail 1, size 0.14–0.32 | *buildHabitat* |
-| R1-D03 | Minnow (livestock) | 6–28 (16 default) | Procedural body 28 rings × 14 sides + tail/dorsal fins, size ×0.70–1.07; states: cruise / explore / feed; boids + phototaxis + vortex forces | *minnowMesh, createFish, updateFish* |
+| R1-D03 | Fish troupe (livestock) | 6–28 (16 default) | 3 GLB species — clownfish 45% / butterfly fish 33% / shark 22% — SkeletonUtils clones from `assets/fish/`; AnimationMixer swim clips beat-linked to velocity; boids + phototaxis + vortex + hard fish↔fish collision | *speciesCatalog, createFish, updateFish, updateAll* |
 | R1-D04 | Food pellets | 12 per feeding | Spheres R 0.035, sink to substrate, removed after 28 s | *feedExhibit, updateFood* |
 
 ### R1.E — Systems (interactive)
@@ -121,6 +121,7 @@ Near-black room, drifting bell meshes, single upward light; the purest shadow ro
 | Manifest + loop + HUD | `src/main.js` |
 
 ## Changelog
+- **v6 — Phase 2 complete**: procedural minnows retired; GLB species troupe (`src/rooms/r1/troupe.js` + `speciesCatalog.js` + `artDirection.js`, Plant Forge pattern) — 3 species, AnimationMixer swim clips beat-linked to velocity, hard fish↔fish collision, phototaxis/vortex/gravity/glow/scale all live on GLB bodies; `window.__aquarium` capture API + `tools/capture-exhibit.mjs` runner (Playwright, SwiftShader) with scenario×view evidence matrix in `evidence/captures/`; curator key light B09; environment reflections dim during Shadow play.
 - **v5.3 — specimen quality + lighting pass**: preview specimen normalized/centered, plays its swim clip via AnimationMixer, emissive material lift (no black-blob); PMREM `RoomEnvironment` reflections at 25% intensity; lamps rebalanced .45; curator key light added (B09); duplicate HUD assets status removed.
 - **v5.2 — Phase 1 complete**: 11 Quaternius CC0 GLB fish downloaded into `assets/fish/` (D05-adjacent, see ATTRIBUTION.md); loader renders a preview specimen orbiting the core with real shadows; manifest is the drop-in point for more models; habitat import fix (K-list audit catch).
 - **v5.1 — hotfix**: `syncFish()` restored to init (v5 split dropped it — troupe never spawned); `assets/fish/manifest.json` placeholder kills the console 404; playtest step 1 asserts the minnow count.

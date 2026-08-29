@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {R1} from './constants.js';
 import {val} from '../../core/controls.js';
 import {rnd,pick} from '../../core/utils.js';
-import {fish} from './minnow.js';
+import {fish} from './troupe.js';
 
 /* R1.D04 food pellets: E06 feeding system spawns them, gravity slider (E12)
    scales their sink rate, fish (D03) chase and eat them */

@@ -9,8 +9,8 @@ import {buildFixtures} from './fixtures.js';
 import {buildDisplay} from './display.js';
 import {buildBooth} from './booth.js';
 import {initHabitat} from './habitat.js';
-import {initMinnows,fish,syncFish,updateFish} from './minnow.js';
-import {initFood,foods,updateFood} from './food.js';
+import {initTroupe,fish,updateAll} from './troupe.js';
+import {initFood} from './food.js';
 import {initSystems} from './systems.js';
 
 /* ROOM r1-gallery-one · "The Exhibit of Shadows" — master exhibit hall.
@@ -28,16 +28,15 @@ export function mount(){
   const habitat=new THREE.Group(),fishGroup=new THREE.Group(),foodGroup=new THREE.Group();
   disp.aquarium.add(habitat,fishGroup,foodGroup);
   const {buildHabitat}=initHabitat(habitat);
-  initMinnows(fishGroup);
+  initTroupe(fishGroup);
   initFood(foodGroup);
-  initSystems({galleryAmbient,lamps,centralLight:disp.centralLight,orbMat:disp.orbMat,aquarium:disp.aquarium,fish,syncFish,buildHabitat});
+  initSystems({galleryAmbient,lamps,centralLight:disp.centralLight,orbMat:disp.orbMat,aquarium:disp.aquarium,fish,buildHabitat});
 
   onFrame((dt,t)=>{
     disp.updateMotes(dt);
-    for(const f of fish)updateFish(f,dt,t);
-    for(const food of foods)updateFood(food,dt);
+    updateAll(dt,t);
   });
-  registerStatus(()=>fish.length+' minnows · '+fish.filter(f=>f.state==='feed').length+' feeding');
+  registerStatus(()=>fish.length+' fish · '+fish.filter(f=>f.state==='feed').length+' feeding');
   registerStatus(()=>'assets: '+assets.status);
 
   readout.innerHTML='<strong>The Exhibit of Shadows.</strong> A single shadow-casting PointLight burns at the heart of the tank — the only instrument in the hall. Its six-direction shadow map throws every minnow, plant, and visitor onto eight hanging sails, the gallery wall, floor, and ceiling. Physics bends around the core: the <em>Light pull</em> slider tugs the school into orbit like moths, and <em>Shadow play</em> dims the gallery, sets the core breathing, and winds the fish into a slow vortex of silhouettes. The stagehand console bends physics itself — gravity, hall time, bioluminescence, minnow scale.';

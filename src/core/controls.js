@@ -24,3 +24,7 @@ export function buildConsole(){
   for(const g of groups.values())host.appendChild(g.fs);
 }
 export function refreshOutputs(){for(const def of controlDefs){const out=$('#'+def.id+'Out');if(out)out.textContent=def.fmt(def.value);}}
+export function setControlValue(id,v){
+  const d=controlMap.get(id);if(!d)return false;
+  d.value=v;if(d.onChange)d.onChange(v);refreshOutputs();return true;
+}

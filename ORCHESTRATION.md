@@ -49,13 +49,13 @@ Built: Gallery One complete (R1.A–E) with the in-sim stagehand console and mag
 4. Start `ATTRIBUTION.md` (CC0 = still note source for good practice)
 - **Done when:** one GLB fish renders in the tank, shadow lands on sails, no console errors.
 
-### Phase 2 — Livestock upgrade (WS-B)
+### Phase 2 — Livestock upgrade (WS-B) — ✅ DONE (v6: GLB species troupe via SkeletonUtils clones, mixer beat-linked to velocity, hard collision; evidence in evidence/captures/phase2/)
 1. Replace procedural minnow body with GLB fish; keep boids/phototaxis/vortex `updateFish` driving position/heading
 2. Drive swim clip via `AnimationMixer`, beat rate tied to velocity (replaces tail-phase math)
 3. 2–3 species with size/speed offsets; slider maps to total count across species
 - **Done when:** mixed school swims the annulus, feeds, orbits in shadow play; ≥ current perf at 28 fish.
 
-### Phase 3 — Environment & materials (WS-C + D)
+### Phase 3 — Lighting, Environment & materials (WS-C + D)
 1. Poly Haven HDRI as `scene.environment` (glass/fish reflections)
 2. PBR floor/wall/plinth textures (Poly Haven or ambientCG CC0)
 3. Caustics: animated OGART caustic frames as low-intensity projected light-map on substrate + plinth

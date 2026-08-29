@@ -1,22 +1,21 @@
-import * as THREE from 'three';
-import {R1} from './constants.js';
 import {state,onFrame,onResize,registerStatus} from '../../core/state.js';
-import {val,defineControl} from '../../core/controls.js';
-import {$} from '../../core/world.js';
-import {assets,loadFishPack} from '../../core/assets.js';
-import {fish,syncFish} from './minnow.js';
+import {val,defineControl,setControlValue} from '../../core/controls.js';
+import {$,scene} from '../../core/world.js';
+import {fish,syncFish,setGlow,setScale} from './troupe.js';
 import {feedExhibit} from './food.js';
+import {defineScenario} from '../../core/scenarios.js';
 
 /* R1.E systems: shadow play (E05), feeding buttons (E06), control declarations
    (E07/E11), magic systems (E12–E15), breathing + resize + status hooks */
 export function initSystems(parts){
-  const {galleryAmbient,lamps,centralLight,orbMat,aquarium,buildHabitat}=parts;
+  const {galleryAmbient,lamps,centralLight,orbMat,buildHabitat}=parts;
   let centralBase=680;
 
   function applyGallery(){
     const g=val('galleryLight');
     galleryAmbient.intensity=(.03+g/100*.70)*(state.shadowPlay?.18:1);
     for(const l of lamps)l.intensity=state.shadowPlay?.07:.45;
+    scene.environmentIntensity=state.shadowPlay?.05:.25;
   }
   function setShadowPlay(on){
     state.shadowPlay=on;state.playT=0;
@@ -25,8 +24,7 @@ export function initSystems(parts){
     if(!on){centralLight.intensity=centralBase;orbMat.emissiveIntensity=4;}
     applyGallery();
   }
-  function setGlow(v){const k=v/100*2.2;for(const f of fish)f.bodyMat.emissiveIntensity=k;}
-  function setScale(v){for(const f of fish)f.group.scale.setScalar(f.size*v/100);}
+  /* setGlow / setScale come from troupe.js (GLB species materials/scales) */
 
   $('#feedAction').addEventListener('click',feedExhibit);$('#feedBtn').addEventListener('click',feedExhibit);
   $('#playBtn').addEventListener('click',()=>setShadowPlay(!state.shadowPlay));
@@ -56,38 +54,10 @@ export function initSystems(parts){
   centralBase=val('lightPower');centralLight.intensity=centralBase;centralLight.shadow.radius=1+val('shadowSoft')/12;applyGallery();
   syncFish();setGlow(val('glow'));setScale(val('fishScale'));
 
-  /* Phase 1 preview specimen: first GLB of the pack orbits the core, casting real shadows.
-     Phase 2 replaces the whole procedural troupe with these + AnimationMixer. */
-  const {TANK_CENTER_Y}=R1;
-  loadFishPack().then(list=>{
-    if(!list.length)return;
-    const {scene:spec,animations}=list[0];
-    /* normalize: Quaternius exports vary wildly in author scale */
-    const box=new THREE.Box3().setFromObject(spec);
-    const size=box.getSize(new THREE.Vector3());
-    spec.scale.setScalar(.85/Math.max(size.x,size.y,size.z,1e-6));
-    const center=box.getCenter(new THREE.Vector3()).multiplyScalar(spec.scale.x);
-    spec.position.set(-center.x,-center.y,-center.z);
-    const wrap=new THREE.Group();wrap.add(spec);
-    wrap.traverse(o=>{
-      if(!o.isMesh)return;
-      o.castShadow=true;
-      const mats=Array.isArray(o.material)?o.material:[o.material];
-      for(const m of mats){
-        if(!m.emissive)continue;
-        if(m.emissive.getHex()===0&&m.color)m.emissive.copy(m.color);
-        m.emissiveIntensity=Math.max(m.emissiveIntensity,.22);
-      }
-    });
-    aquarium.add(wrap);
-    let mixer=null;
-    const clip=animations.find(a=>/swim/i.test(a.name))||animations[0]||null;
-    if(clip){mixer=new THREE.AnimationMixer(spec);mixer.clipAction(clip).play();}
-    onFrame((dt,t)=>{
-      if(mixer)mixer.update(dt);
-      const ang=t*.35,x=Math.sin(ang)*1.55,z=Math.cos(ang)*1.55;
-      wrap.position.set(x,Math.sin(t*.6)*.3,z);
-      wrap.lookAt(new THREE.Vector3(Math.sin(ang+.06)*1.55,TANK_CENTER_Y+wrap.position.y,Math.cos(ang+.06)*1.55));
-    });
-  });
+  /* capture scenarios (Plant Forge pattern) */
+  defineScenario('default',()=>{setShadowPlay(false);setControlValue('glow',0);setControlValue('gravity',100);setControlValue('timeScale',100);});
+  defineScenario('shadowplay',()=>{setControlValue('glow',35);setShadowPlay(true);});
+  defineScenario('calm',()=>{setShadowPlay(false);setControlValue('timeScale',25);});
+  defineScenario('feeding',()=>{setShadowPlay(false);feedExhibit();feedExhibit();});
+  defineScenario('magic',()=>{setShadowPlay(false);setControlValue('gravity',-60);setControlValue('glow',100);setControlValue('fishScale',180);});
 }

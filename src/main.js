@@ -4,11 +4,13 @@
    Rooms mount through roomManifest (ADR-003): adding a room = one line. */
 import {state,frameHooks,statusHooks} from './core/state.js';
 import {$,hud,scene,camera,renderer,resize,lookEl,desktopPointer} from './core/world.js';
-import {defineControl,val,buildConsole,refreshOutputs} from './core/controls.js';
+import {defineControl,val,setControlValue,buildConsole,refreshOutputs} from './core/controls.js';
 import {applyShadowCasting} from './core/shadows.js';
-import {player,resetPlayer,updatePlayer,updateCamera} from './core/player.js';
+import {player,resetPlayer,updatePlayer,updateCamera,setCaptureView} from './core/player.js';
 import {keys} from './core/input.js';
 import {updatePrompt} from './core/console.js';
+import {runScenario} from './core/scenarios.js';
+import {assets} from './core/assets.js';
 import * as r1 from './rooms/r1/index.js';
 
 /* core-owned control: the visitor's own walk speed (rooms declare theirs) */
@@ -40,8 +42,14 @@ function updateHud(){
   hud.textContent=text+' · radial '+r.toFixed(1)+' m'+lookHint;
 }
 
-let last=performance.now(),metricClock=0;
+let last=performance.now(),metricClock=0,frames=0;
 function frame(now){
+  frames++;
+  if(frames===3)window.__aquarium.ready=true;
+  if(frames>5&&document.body.dataset.labState!=='ready'){
+    const a=assets.status;
+    if(a.startsWith('ready')||a.startsWith('none'))document.body.dataset.labState='ready';
+  }
   const dt=Math.min(.033,Math.max(0,(now-last)/1000));last=now;
   if(!state.consoleOpen){if(keys.turnL)player.yaw-=dt*1.4;if(keys.turnR)player.yaw+=dt*1.4;}
   if(state.running){
@@ -54,3 +62,19 @@ function frame(now){
   renderer.render(scene,camera);requestAnimationFrame(frame);
 }
 updateHud();requestAnimationFrame(frame);
+
+/* evidence/capture API (Plant Forge pattern) — tools/capture-exhibit.mjs drives this */
+window.__aquarium={
+  ready:false,
+  stats:()=>({
+    running:state.running,
+    simTime:Number(state.simTime.toFixed(1)),
+    shadowPlay:state.shadowPlay,
+    captureView:state.captureView,
+    assets:assets.status,
+    status:statusHooks.map(f=>f()),
+  }),
+  setScenario:name=>runScenario(name),
+  capturePreset:name=>setCaptureView(name),
+  setControlValue:(id,v)=>setControlValue(id,v),
+};

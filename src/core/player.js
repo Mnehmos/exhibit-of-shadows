@@ -18,7 +18,9 @@ const cameraProp=new THREE.Mesh(new THREE.BoxGeometry(.22,.14,.13),dark);cameraP
 scene.add(player.group);
 
 function clampPlayer(){const r=Math.hypot(player.pos.x,player.pos.z);if(r<player.minR){const s=player.minR/(r||.001);player.pos.x*=s;player.pos.z*=s;}if(r>player.maxR){const s=player.maxR/r;player.pos.x*=s;player.pos.z*=s;}}
-export function resetPlayer(){player.pos.copy(player.spawn);player.yaw=0;player.pitch=0;player.group.position.copy(player.pos);}
+export function resetPlayer(){player.pos.copy(player.spawn);player.yaw=0;player.pitch=0;player.group.position.copy(player.pos);state.captureView=null;}
+export function setCaptureView(name){state.captureView=name;return true;}
+export function clearCaptureView(){state.captureView=null;}
 function forwardVector(){return new THREE.Vector3(Math.sin(player.yaw),0,-Math.cos(player.yaw));}
 function rightVector(){return new THREE.Vector3(Math.cos(player.yaw),0,Math.sin(player.yaw));}
 export function updatePlayer(dt){
@@ -35,6 +37,16 @@ export function updatePlayer(dt){
   player.group.rotation.y=-player.yaw;
 }
 export function updateCamera(){
+  /* evidence-capture camera presets (Plant Forge pattern) */
+  if(state.captureView){
+    const p={front:[0,5.4,6.4,0,4.4,0],quarter:[4.6,5.6,4.6,0,4.4,0],overhead:[0,11.4,.02,0,6.2,0],closeup:[1.9,5,1.9,0,4.7,0],wide:[0,5,8.6,0,4.3,0]}[state.captureView];
+    if(p){
+      player.group.visible=false;
+      camera.position.set(p[0],p[1],p[2]);
+      camera.lookAt(p[3],p[4],p[5]);
+      return;
+    }
+  }
   const forward=forwardVector(),headPos=player.pos.clone().add(new THREE.Vector3(0,1.62,0));
   if(player.viewMode==='first'){
     player.group.visible=false;camera.position.copy(headPos);
