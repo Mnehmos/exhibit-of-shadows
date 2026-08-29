@@ -77,4 +77,14 @@ window.__aquarium={
   setScenario:name=>runScenario(name),
   capturePreset:name=>setCaptureView(name),
   setControlValue:(id,v)=>setControlValue(id,v),
+  /* deterministic fast-forward: fixed-dt sim steps + one render (fps-independent) */
+  step(steps=1,dtStep=1/30){
+    for(let i=0;i<steps;i++){
+      const wdt=dtStep*val('timeScale')/100;
+      state.simTime+=wdt;updatePlayer(dtStep);
+      for(const f of frameHooks)f(wdt,state.simTime);
+    }
+    updateCamera();renderer.render(scene,camera);
+    return window.__aquarium.stats();
+  },
 };

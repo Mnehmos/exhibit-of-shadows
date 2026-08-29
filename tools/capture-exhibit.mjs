@@ -58,6 +58,8 @@ try{
     let applied=false;
     try{applied=await page.evaluate(name=>window.__aquarium.setScenario(name),scenario);}
     catch(e){console.error('SCENARIO FAIL',scenario,'\n'+e.message.split('\n').slice(0,6).join('\n'));captures.push({scenario,skipped:true,error:e.message.split('\n')[0]});continue;}
+    const steps=Number(argument('steps','0'));
+    if(steps>0)await page.evaluate(n=>window.__aquarium.step(n),steps);
     await page.waitForFunction(()=>document.body.dataset['labState']==='settled',undefined,{timeout:15000}).catch(()=>{});
     await page.waitForTimeout(settleMs);
     for(const view of views){

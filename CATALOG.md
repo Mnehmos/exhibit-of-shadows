@@ -49,7 +49,8 @@ The main hall: a cylinder R 10.8 m × H 12.8 m with the centerpiece tank at its 
 |---|---|---|---|---|
 | R1-D01 | Stem plant + leaves | 6 + density slider (17 @ default 58%) | Stem R 0.025–0.055, H 0.8–2.5, 5 leaves each, 4 greens; rebuilt on slider change | *buildHabitat* |
 | R1-D02 | Rock | 7 | Icosahedron detail 1, size 0.14–0.32 | *buildHabitat* |
-| R1-D03 | Fish troupe (livestock) | 6–28 (16 default) | 3 GLB species — clownfish 45% / butterfly fish 33% / shark 22% — SkeletonUtils clones from `assets/fish/`; AnimationMixer swim clips beat-linked to velocity; boids + phototaxis + vortex + hard fish↔fish collision | *speciesCatalog, createFish, updateFish, updateAll* |
+| R1.D03 | Fish troupe (livestock) | 6–28 prey (16 default) + 0–3 sharks | GLB species — prey: clownfish 60% / butterfly fish 40%; predator: shark — SkeletonUtils clones from `assets/fish/`; AnimationMixer swim clips beat-linked to velocity; boids + phototaxis + vortex + hard fish↔fish collision | *speciesCatalog, createFish, updateFish, updateAll* |
+| R1.D06 | Predator — shark (needs-driven) | 0–3 | Patrols mid-tank when fed; hunts nearest prey below 45% energy; chomp (+18 energy) at contact; starves to a weak drift at 0; never casts-hog, full shark minds its own business | *updatePredator, ecosystem.js* |
 | R1-D04 | Food pellets | 12 per feeding | Spheres R 0.035, sink to substrate, removed after 28 s | *feedExhibit, updateFood* |
 
 ### R1.E — Systems (interactive)
@@ -69,7 +70,8 @@ The main hall: a cylinder R 10.8 m × H 12.8 m with the centerpiece tank at its 
 | R1-E12 | Gravity system (magic) | −100…200% — pellet sink rate + fish buoyancy force | *updateFish/updateFood* |
 | R1-E13 | Hall time (magic) | 10…300% world-time scale; visitor stays real-time (ADR-009) | *frame()* |
 | R1-E14 | Bioluminescence (magic) | 0–100% fish-body emissive glow `#7fd4c1` — pairs with Shadow play | *setGlow* |
-| R1-E15 | Minnow scale (magic) | 30–250% live troupe resize; bounds clamping absorbs giants | *setScale* |
+| R1.E15 | Minnow scale (magic) | 30–250% live troupe resize; bounds clamping absorbs giants | *setScale* |
+| R1-E16 | Ecosystem: needs + hatchery | Shark energy drain (Hunger rate slider), hunt/rest/starve states, chomp +18; Hatchery slider restocks prey at the plant bed (0 = off) | *ecosystem.js* |
 
 ---
 
@@ -112,8 +114,9 @@ Near-black room, drifting bell meshes, single upward light; the purest shadow ro
 | R1.B08 console booth | `src/rooms/r1/booth.js` |
 | R1.C display (C01–C10) | `src/rooms/r1/display.js` |
 | R1.D01–D02 habitat | `src/rooms/r1/habitat.js` |
-| R1.D03 minnows | `src/rooms/r1/minnow.js` |
+| R1.D03 fish troupe | `src/rooms/r1/troupe.js` + `speciesCatalog.js` |
 | R1.D04 food | `src/rooms/r1/food.js` |
+| R1.D06 predator + R1-E16 ecosystem | `src/rooms/r1/ecosystem.js` |
 | R1.E systems (E05–E15) | `src/rooms/r1/systems.js` |
 | Room assembly (mount) | `src/rooms/r1/index.js` |
 | R1 geometry constants | `src/rooms/r1/constants.js` |
@@ -121,6 +124,7 @@ Near-black room, drifting bell meshes, single upward light; the purest shadow ro
 | Manifest + loop + HUD | `src/main.js` |
 
 ## Changelog
+- **v7 — center-tank ecosystem (Phase 2.5)**: roles on species (prey/predator); shark needs — patrol when fed, hunt below 45% energy, chomp +18, starve-drift at 0 (user rule: *a full shark minds its own business*); Hatchery slider restocks prey at the plant bed with grow-in; Ecosystem console group (sharks/hunger/restock); hunt capture scenario; import-resolution audit caught 2 bad imports pre-deploy.
 - **v6 — Phase 2 complete**: procedural minnows retired; GLB species troupe (`src/rooms/r1/troupe.js` + `speciesCatalog.js` + `artDirection.js`, Plant Forge pattern) — 3 species, AnimationMixer swim clips beat-linked to velocity, hard fish↔fish collision, phototaxis/vortex/gravity/glow/scale all live on GLB bodies; `window.__aquarium` capture API + `tools/capture-exhibit.mjs` runner (Playwright, SwiftShader) with scenario×view evidence matrix in `evidence/captures/`; curator key light B09; environment reflections dim during Shadow play.
 - **v5.3 — specimen quality + lighting pass**: preview specimen normalized/centered, plays its swim clip via AnimationMixer, emissive material lift (no black-blob); PMREM `RoomEnvironment` reflections at 25% intensity; lamps rebalanced .45; curator key light added (B09); duplicate HUD assets status removed.
 - **v5.2 — Phase 1 complete**: 11 Quaternius CC0 GLB fish downloaded into `assets/fish/` (D05-adjacent, see ATTRIBUTION.md); loader renders a preview specimen orbiting the core with real shadows; manifest is the drop-in point for more models; habitat import fix (K-list audit catch).

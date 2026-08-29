@@ -39,7 +39,7 @@ export function updatePlayer(dt){
 export function updateCamera(){
   /* evidence-capture camera presets (Plant Forge pattern) */
   if(state.captureView){
-    const p={front:[0,5.4,6.4,0,4.4,0],quarter:[4.6,5.6,4.6,0,4.4,0],overhead:[0,11.4,.02,0,6.2,0],closeup:[1.9,5,1.9,0,4.7,0],wide:[0,5,8.6,0,4.3,0]}[state.captureView];
+    const p={front:[0,5.4,6.4,0,4.4,0],quarter:[4.6,5.6,4.6,0,4.4,0],overhead:[0,11.4,.02,0,6.2,0],closeup:[1.9,5,1.9,0,4.7,0],wide:[0,5,8.6,0,4.3,0],hunt:[2.2,6,5.4,0,4.2,0]}[state.captureView];
     if(p){
       player.group.visible=false;
       camera.position.set(p[0],p[1],p[2]);

@@ -49,11 +49,15 @@ Built: Gallery One complete (R1.A–E) with the in-sim stagehand console and mag
 4. Start `ATTRIBUTION.md` (CC0 = still note source for good practice)
 - **Done when:** one GLB fish renders in the tank, shadow lands on sails, no console errors.
 
-### Phase 2 — Livestock upgrade (WS-B) — ✅ DONE (v6: GLB species troupe via SkeletonUtils clones, mixer beat-linked to velocity, hard collision; evidence in evidence/captures/phase2/)
+### Phase 2 — Livestock upgrade (WS-B) — ✅ DONE (v6)
 1. Replace procedural minnow body with GLB fish; keep boids/phototaxis/vortex `updateFish` driving position/heading
 2. Drive swim clip via `AnimationMixer`, beat rate tied to velocity (replaces tail-phase math)
 3. 2–3 species with size/speed offsets; slider maps to total count across species
-- **Done when:** mixed school swims the annulus, feeds, orbits in shadow play; ≥ current perf at 28 fish.
+- **Done when:** mixed school swims the annulus, feeds, orbits in shadow play; ≥ current perf at 28 fish. *(evidence: evidence/captures/phase2/)*
+
+### Phase 2.5 — Center-tank ecosystem (WS-B) — ✅ DONE (v7)
+Custom centerpiece ecosystem: prey/predator roles on species; shark needs (patrol → hunt <45% → chomp +18 → starve-drift at 0; *a full shark minds its own business*); Hatchery restock slider (0 = off) respawns prey at the plant bed with grow-in; Ecosystem console group (sharks / hunger rate / hatchery); hunt capture scenario.
+- **Done when:** hunt scenario shows sharks chasing with energy draining and the hatchery holding the prey population at target — verified via evidence captures.
 
 ### Phase 3 — Lighting, Environment & materials (WS-C + D)
 1. Poly Haven HDRI as `scene.environment` (glass/fish reflections)

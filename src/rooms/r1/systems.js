@@ -59,5 +59,6 @@ export function initSystems(parts){
   defineScenario('shadowplay',()=>{setControlValue('glow',35);setShadowPlay(true);});
   defineScenario('calm',()=>{setShadowPlay(false);setControlValue('timeScale',25);});
   defineScenario('feeding',()=>{setShadowPlay(false);feedExhibit();feedExhibit();});
+  defineScenario('hunt',()=>{setShadowPlay(false);setControlValue('hungerRate',300);setControlValue('sharks',2);setControlValue('restock',8);setControlValue('timeScale',300);});
   defineScenario('magic',()=>{setShadowPlay(false);setControlValue('gravity',-60);setControlValue('glow',100);setControlValue('fishScale',180);});
 }

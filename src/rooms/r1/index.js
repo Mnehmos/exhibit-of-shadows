@@ -11,6 +11,7 @@ import {buildBooth} from './booth.js';
 import {initHabitat} from './habitat.js';
 import {initTroupe,fish,updateAll} from './troupe.js';
 import {initFood} from './food.js';
+import {initEcosystem} from './ecosystem.js';
 import {initSystems} from './systems.js';
 
 /* ROOM r1-gallery-one · "The Exhibit of Shadows" — master exhibit hall.
@@ -30,6 +31,7 @@ export function mount(){
   const {buildHabitat}=initHabitat(habitat);
   initTroupe(fishGroup);
   initFood(foodGroup);
+  initEcosystem();
   initSystems({galleryAmbient,lamps,centralLight:disp.centralLight,orbMat:disp.orbMat,aquarium:disp.aquarium,fish,buildHabitat});
 
   onFrame((dt,t)=>{
