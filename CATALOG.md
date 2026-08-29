@@ -43,6 +43,9 @@ The main hall: a cylinder R 10.8 m × H 12.8 m with the centerpiece tank at its 
 | R1-C08 | Central light | 1 | **Shadow-casting PointLight** `#ffd99a`, cubemap 512²/1024², far 15.8 — the instrument of the exhibit | *centralLight* |
 | R1-C09 | Dust motes | 280 | Additive points R 0.032, spiral drift inside water volume | *motes* |
 | R1-C10 | Exhibit plaque | 1 | "THE EXHIBIT OF SHADOWS — SILO AQUARIUM MUSEUM · GALLERY ONE", on plinth south face (+Z) | *plaque* |
+| R1-C11 | Water surface study | 1 | Physical-transmission disc at waterline; IOR 1.333, low roughness, clearcoat | *surface* |
+| R1-C12 | Animated caustic study | 1 | Procedural additive pattern projected on substrate; slow offset + rotation | *caustics* |
+| R1-C13 | Hero aquarium key rig | 2 | Cool non-shadow SpotLights shaping the hero specimen inside the tank | *keyA, keyB* |
 
 ### R1.D — Habitat (inside the display)
 | ID | Piece | Qty | Spec | Code |
@@ -51,6 +54,7 @@ The main hall: a cylinder R 10.8 m × H 12.8 m with the centerpiece tank at its 
 | R1-D02 | Rock | 7 | Icosahedron detail 1, size 0.14–0.32 | *buildHabitat* |
 | R1-D03 | Fish troupe (livestock) | 6–28 (16 default) | 3 GLB species — clownfish 45% / butterfly fish 33% / shark 22% — SkeletonUtils clones from `assets/fish/`; AnimationMixer swim clips beat-linked to velocity; boids + phototaxis + vortex + hard fish↔fish collision | *speciesCatalog, createFish, updateFish, updateAll* |
 | R1-D04 | Food pellets | 12 per feeding | Spheres R 0.035, sink to substrate, removed after 28 s | *feedExhibit, updateFood* |
+| R1-D06 | Hero clownfish quality study | 1 | Visitor-facing lateral patrol; deforming 64×40 body, vertex clownfish bands, micro-scale bump/roughness, clearcoat/iridescence, layered translucent fins, separate eyes/corneas; casts shadows | *createHeroFish, deformBody* |
 
 ### R1.E — Systems (interactive)
 | ID | System | Notes | Code |
@@ -98,12 +102,12 @@ Near-black room, drifting bell meshes, single upward light; the purest shadow ro
 ## Display registry (cross-reference)
 | Display | Location | Content | Light source |
 |---|---|---|---|
-| D-MAIN | R1 centerpiece | R1-C01…C10 + habitat R1-D01…04 + livestock | R1-C08 central light |
+| D-MAIN | R1 centerpiece | R1-C01…C13 + habitat R1-D01…04/R1-D06 + livestock | R1-C08 central light + R1-C13 hero keys |
 | D1–D8 | R1 sails | Radial fish/visitor silhouettes | R1-C08 |
 | D-WALL | R1 perimeter wall | Wide radial silhouettes, ribs cut shadow stripes | R1-C08 + B02 |
 | D-FLOOR / D-CEIL | R1 floor & ceiling | fan/radial shadows | R1-C08 |
 
-## Source map (v5 — code layout)
+## Source map (v7 — code layout)
 
 | Catalog section | File |
 |---|---|
@@ -111,8 +115,9 @@ Near-black room, drifting bell meshes, single upward light; the purest shadow ro
 | R1.B furnishings (B01–B04) | `src/rooms/r1/fixtures.js` |
 | R1.B08 console booth | `src/rooms/r1/booth.js` |
 | R1.C display (C01–C10) | `src/rooms/r1/display.js` |
+| R1.C11–C13 + R1.D06 hero quality study | `src/rooms/r1/heroFish.js` |
 | R1.D01–D02 habitat | `src/rooms/r1/habitat.js` |
-| R1.D03 minnows | `src/rooms/r1/minnow.js` |
+| R1.D03 GLB troupe | `src/rooms/r1/troupe.js`, `src/rooms/r1/speciesCatalog.js` |
 | R1.D04 food | `src/rooms/r1/food.js` |
 | R1.E systems (E05–E15) | `src/rooms/r1/systems.js` |
 | Room assembly (mount) | `src/rooms/r1/index.js` |
@@ -121,6 +126,7 @@ Near-black room, drifting bell meshes, single upward light; the purest shadow ro
 | Manifest + loop + HUD | `src/main.js` |
 
 ## Changelog
+- **v7 — Phase 3 quality study started**: one repo-native hero clownfish now patrols the visitor-facing half of the big tank with dense deforming geometry, physical wet materials, micro-scale surface maps, layered fins and wet corneas; glass/water use physical transmission and attenuation; animated procedural surface/caustic cues and a two-light underwater key rig landed; exposure rebalanced; automated GitHub Actions visual-smoke captures verify the deployed WebGL result.
 - **v6 — Phase 2 complete**: procedural minnows retired; GLB species troupe (`src/rooms/r1/troupe.js` + `speciesCatalog.js` + `artDirection.js`, Plant Forge pattern) — 3 species, AnimationMixer swim clips beat-linked to velocity, hard fish↔fish collision, phototaxis/vortex/gravity/glow/scale all live on GLB bodies; `window.__aquarium` capture API + `tools/capture-exhibit.mjs` runner (Playwright, SwiftShader) with scenario×view evidence matrix in `evidence/captures/`; curator key light B09; environment reflections dim during Shadow play.
 - **v5.3 — specimen quality + lighting pass**: preview specimen normalized/centered, plays its swim clip via AnimationMixer, emissive material lift (no black-blob); PMREM `RoomEnvironment` reflections at 25% intensity; lamps rebalanced .45; curator key light added (B09); duplicate HUD assets status removed.
 - **v5.2 — Phase 1 complete**: 11 Quaternius CC0 GLB fish downloaded into `assets/fish/` (D05-adjacent, see ATTRIBUTION.md); loader renders a preview specimen orbiting the core with real shadows; manifest is the drop-in point for more models; habitat import fix (K-list audit catch).
