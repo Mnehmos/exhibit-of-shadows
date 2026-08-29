@@ -17,6 +17,7 @@ export function initEcosystem(){
   defineControl({id:'restock',label:'Hatchery',group:'Ecosystem',min:0,max:8,step:1,value:3,fmt:v=>v+'/min'});
 
   onFrame(dt=>{
+    syncPredators();  /* self-heals after the asset pack finishes loading */
     const sharks=predators(),prey=preyFish();
     const hunger=val('hungerRate')/100;
 
@@ -64,6 +65,8 @@ export function initEcosystem(){
     const hunting=sharks.filter(s=>s.brain.mode==='hunt').length;
     return `sharks ${sharks.length} · prey ${prey.length} · avg energy ${avg}% · hunting ${hunting}`;
   });
+
+  syncPredators();
 }
 
 function syncPredators(){

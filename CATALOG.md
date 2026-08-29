@@ -37,11 +37,11 @@ The main hall: a cylinder R 10.8 m × H 12.8 m with the centerpiece tank at its 
 | R1-C02 | Water volume | 1 | Cylinder R 3.02, H 8.08, tinted transmission 0.78 | *water* |
 | R1-C03 | Trim ring | 2 | Torus R 3.21, tube 0.12, tank top & bottom | *ring loop* |
 | R1-C04 | Plinth | 1 | Cylinder R 3.67, H 0.55, graphite `#353638` | *plinth* |
-| R1-C05 | Substrate bed | 1 | Cylinder R 2.93, H 0.22, sand `#655f50` | *substrate* |
-| R1-C06 | Light column (beam) | 1 | Additive cylinder R 0.48, gradient alpha, core of the exhibit | *lightColumn* |
-| R1-C07 | Core orb | 1 | Sphere R 0.32, emissive `#ffbd59` (breathes during shadow play) | *orb* |
+| R1-C05 | Dune bed | 1 | Sculpted displaced sand disc (3-wave ridges), moonlit `#cbb894` | *dunes* |
+| R1-C06 | God-ray beams | 3 | Nested additive cones from the core, gradient alpha, slow rotation | *beams* |
+| R1-C07 | Moonstone core | 1 | Faceted icosahedron R 0.34, amber emissive pulse, rotates + bobs | *moonstone* |
 | R1-C08 | Central light | 1 | **Shadow-casting PointLight** `#ffd99a`, cubemap 512²/1024², far 15.8 — the instrument of the exhibit | *centralLight* |
-| R1-C09 | Dust motes | 280 | Additive points R 0.032, spiral drift inside water volume | *motes* |
+| R1-C09 | Plankton sparkle + bubbles | 160 + 80 | Additive drift points (plankton) + rising wobble columns (bubbles) | *plankton, bubbles* |
 | R1-C10 | Exhibit plaque | 1 | "THE EXHIBIT OF SHADOWS — SILO AQUARIUM MUSEUM · GALLERY ONE", on plinth south face (+Z) | *plaque* |
 | R1-C11 | Water surface study | 1 | Physical-transmission disc at waterline; IOR 1.333, low roughness, clearcoat | *surface* |
 | R1-C12 | Animated caustic study | 1 | Procedural additive pattern projected on substrate; slow offset + rotation | *caustics* |
@@ -55,7 +55,7 @@ The main hall: a cylinder R 10.8 m × H 12.8 m with the centerpiece tank at its 
 | R1.D03 | Fish troupe (livestock) | 6–28 prey (16 default) + 0–3 sharks | GLB species — prey: clownfish 60% / butterfly fish 40%; predator: shark — SkeletonUtils clones from `assets/fish/`; AnimationMixer swim clips beat-linked to velocity; boids + phototaxis + vortex + hard fish↔fish collision | *speciesCatalog, createFish, updateFish, updateAll* |
 | R1.D06 | Predator — shark (needs-driven) | 0–3 | Patrols mid-tank when fed; hunts nearest prey below 45% energy; chomp (+18 energy) at contact; starves to a weak drift at 0; never casts-hog, full shark minds its own business | *updatePredator, ecosystem.js* |
 | R1-D04 | Food pellets | 12 per feeding | Spheres R 0.035, sink to substrate, removed after 28 s | *feedExhibit, updateFood* |
-| R1-D06 | Hero clownfish quality study | 1 | Visitor-facing lateral patrol; clean axial procedural body with three graphic bands, satin shading, layered fins, expressive eyes and mouth; casts shadows | *createHeroFish* |
+| R1-D07 | Hero clownfish quality study | 0 | RETIRED from the main tank in v9 — the study lives on as a photo-booth specimen (photo-booth.html) | *createHeroFishSpecimen* |
 
 ### R1.E — Systems (interactive)
 | ID | System | Notes | Code |
@@ -66,7 +66,7 @@ The main hall: a cylinder R 10.8 m × H 12.8 m with the centerpiece tank at its 
 | R1-E04 | Movement | WASD + joystick + hold buttons, speed slider | *updatePlayer* |
 | R1-E05 | Shadow play | Dims gallery (B02→0.07, B03→×0.18), core breathing, +30 schooling, vortex swirl | *setShadowPlay* |
 | R1-E06 | Feeding | Spawns D04, fish switch to feed state | *feedExhibit* |
-| R1-E07 | Stagehand console (controls) | All 9 sliders live only in the in-sim console; approach booth + E (desktop) / tap (touch); movement frozen while open | *consolePanel* |
+| R1-E07 | Stagehand console (controls) | 17 declared controls in 5 groups (Exhibit / Impossible things / Shadow hall / Ecosystem / Visitor); approach booth + E (desktop) / tap (touch); movement frozen while open | *consolePanel* |
 | R1-E08 | Radiant visitors | PLANNED (Phase 5): 2–3 wanderers reusing the player rig + steering | — |
 | R1-E09 | Room manifest (plugin load order) | Rooms mount through ctx services; demo-room line proves the one-line add | *roomManifest* |
 | R1-E10 | Shadow discipline pass | Every non-transparent mesh casts; glass/water/beam/sheer sails and userData.noCast exempt | *applyShadowCasting* |
@@ -129,6 +129,7 @@ Near-black room, drifting bell meshes, single upward light; the purest shadow ro
 | Manifest + loop + HUD | `src/main.js` |
 
 ## Changelog
+- **v9 — THE MOON DUNE (center-tank redesign)**: authored tank replaces the generic cylinder — night-ocean gradient water shell, sculpted dune bed, animated caustic light-webs, faceted moonstone core in layered god-rays, bronze armillary trim, bubbles + plankton; moon minnows return as the centerpiece (88-strong bait ball, hard separation, flee, hatchery grow-in, moon-glow in Shadow play); hero clownfish retired to the photo booth; exposure .8, environment fill cut to 8%.
 - **v8 — center-tank ecosystem (Phase 2.5)**: roles on species (prey/predator); shark needs — patrol when fed, hunt below 45% energy, chomp +18, starve-drift at 0 (user rule: *a full shark minds its own business*); Hatchery slider restocks prey at the plant bed with grow-in; Ecosystem console group (sharks/hunger/restock); hunt capture scenario; import-resolution audit caught 2 bad imports pre-deploy.
 - **v7.3 — stylized procedural hero pass**: replaced the photoreal-leaning hero attempt with a shared graphic clownfish asset used by both the live tank and photo booth: custom axial silhouette, clean black/white/orange bands, satin materials, expressive eye highlights, readable mouth and softer fin motion; capped body geometry closes front and rear views.
 - **v7.2 — complete specimen catalog**: reusable `src/photobooth/stage.js` now isolates all 13 project fish entriesâ€”11 GLB models plus the procedural hero clownfish and procedural minnow archiveâ€”with automatic centering, longest-axis alignment and common framing; dedicated `photo-booth.html` adds live animation where available, side/¾/front poses, drag/zoom, turntable and PNG export; `tools/capture-photo-booth.mjs` and visual-smoke CI render the complete catalog after each deployment.

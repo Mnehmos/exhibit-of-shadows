@@ -19,7 +19,7 @@ renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=.68;
+renderer.toneMappingExposure=.8;
 renderer.domElement.style.width='100%';
 renderer.domElement.style.height='auto';
 renderer.domElement.style.aspectRatio='16/9';
@@ -29,7 +29,7 @@ mount.appendChild(lookEl);
 /* PBR environment: subtle procedural room reflections for glass, fish, sails */
 const pmrem=new THREE.PMREMGenerator(renderer);
 scene.environment=pmrem.fromScene(new RoomEnvironment(),.04).texture;
-scene.environmentIntensity=.25;
+scene.environmentIntensity=.08;
 pmrem.dispose();
 
 export function resize(){
