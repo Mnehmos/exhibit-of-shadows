@@ -35,6 +35,20 @@ function minnowMesh(){
   return{group,geom,tailPivot,bodyMat:body.material};
 }
 
+/* Archive-only specimen adapter. The live troupe now uses GLB instances, but
+   this original procedural minnow remains part of the project's visual history
+   and is intentionally available in the photo booth for comparison. */
+export function createMinnowSpecimen(){
+  const m=minnowMesh();let phase=0;
+  function update(dt){
+    phase+=dt*3.8;
+    const p=m.geom.attributes.position,base=m.geom.userData.base,us=m.geom.userData.u;
+    for(let i=0;i<p.count;i++){const k=i*3,lat=(.002+.009*us[i]+.068*Math.pow(us[i],2.8))*Math.sin(phase-us[i]*6.45);p.array[k+2]=base[k+2]+lat;}
+    p.needsUpdate=true;m.tailPivot.rotation.y=-Math.sin(phase-6.45)*.40;
+  }
+  return {scene:m.group,animations:[],update,label:'Procedural minnow · archive study',kind:'procedural'};
+}
+
 function randomFishPosition(){const {TANK_R,TANK_H,LIGHT_COLUMN_R}=R1;const a=rnd(0,6.28),r=rnd(LIGHT_COLUMN_R+.52,TANK_R-.42);return new THREE.Vector3(Math.sin(a)*r,rnd(-TANK_H*.39,TANK_H*.39),Math.cos(a)*r);}
 export function createFish(){
   const m=minnowMesh();

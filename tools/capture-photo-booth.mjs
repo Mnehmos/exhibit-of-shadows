@@ -16,7 +16,7 @@ try{
   for(const file of files){
     await page.evaluate(name=>{window.__photoBooth.setSpin(false);window.__photoBooth.setView('side');window.__photoBooth.select(name);},file);
     await page.waitForFunction(name=>document.body.dataset.boothState==='settled'&&window.__photoBooth.stats()?.file===name,file);await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
-    const png=file.replace(/\.glb$/i,'.png');await page.locator('#mount canvas').screenshot({path:resolve(outputDirectory,png),animations:'allow',timeout:90000});captures.push({file,png,stats:await page.evaluate(()=>window.__photoBooth.stats())});
+    const png=file.replace(/\.glb$/i,'').replace(/[^a-z0-9._-]+/gi,'-')+'.png';await page.locator('#mount canvas').screenshot({path:resolve(outputDirectory,png),animations:'allow',timeout:90000});captures.push({file,png,stats:await page.evaluate(()=>window.__photoBooth.stats())});
   }
   await writeFile(resolve(outputDirectory,'manifest.json'),JSON.stringify({baseUrl,captures},null,2));console.log(`PHOTO BOOTH PASS — ${captures.length} isolated specimens`);
 }catch(e){console.error('PHOTO BOOTH FAILED:',e.message);process.exitCode=2;}finally{await browser.close();}

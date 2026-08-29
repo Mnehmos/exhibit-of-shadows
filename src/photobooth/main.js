@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {assets,loadFishPack} from '../core/assets.js';
 import {createSpecimenStage,displayName} from './stage.js';
+import {createHeroFishSpecimen} from '../rooms/r1/heroFish.js';
+import {createMinnowSpecimen} from '../rooms/r1/minnow.js';
 
 const $=s=>document.querySelector(s),mount=$('#mount');
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x071114);
@@ -41,6 +43,10 @@ const clock=new THREE.Clock();function frame(){requestAnimationFrame(frame);cons
 
 document.body.dataset.boothState='loading';
 const list=await loadFishPack();
-for(const entry of list){const option=document.createElement('option');option.value=entry.file;option.textContent=displayName(entry.file);select.appendChild(option);}select.disabled=!list.length;
-if(list.length){booth.setEntries(list);document.body.dataset.boothState='settled';}else{nameEl.textContent='No specimens found';metaEl.textContent=assets.status;document.body.dataset.boothState='error';}
-window.__photoBooth={get ready(){return document.body.dataset.boothState==='settled';},files:list.map(x=>x.file),select:file=>choose(file),setView:name=>booth.setView(name),setSpin:on=>{const value=booth.setSpin(on);syncSpinButton();return value;},stats:()=>booth.stats()};
+const catalog=[...list,
+  {file:'hero-clownfish.procedural',label:'Hero Clownfish · Procedural',kind:'procedural',create:createHeroFishSpecimen},
+  {file:'minnow.procedural',label:'Minnow · Procedural Archive',kind:'procedural',create:createMinnowSpecimen},
+];
+for(const entry of catalog){const option=document.createElement('option');option.value=entry.file;option.textContent=entry.label||displayName(entry.file);select.appendChild(option);}select.disabled=!catalog.length;
+if(catalog.length){booth.setEntries(catalog);document.body.dataset.boothState='settled';}else{nameEl.textContent='No specimens found';metaEl.textContent=assets.status;document.body.dataset.boothState='error';}
+window.__photoBooth={get ready(){return document.body.dataset.boothState==='settled';},files:catalog.map(x=>x.file),select:file=>choose(file),setView:name=>booth.setView(name),setSpin:on=>{const value=booth.setSpin(on);syncSpinButton();return value;},stats:()=>booth.stats()};

@@ -143,6 +143,35 @@ function addWaterStudy(aquarium){
   return {surface,caustics,causticMap,keyA,keyB};
 }
 
+/* Standalone archive specimen for the photo booth. It deliberately reuses the
+   same hero geometry/material construction as the live tank, but omits the
+   aquarium-only water, caustic and light objects. */
+export function createHeroFishSpecimen(){
+  const visual=new THREE.Group();
+  const body=makeBody();visual.add(body.mesh);
+  const tail=layeredFin([[0,-.07],[-.34,-.36],[-.29,0],[-.34,.36],[0,.07]],new THREE.Vector3(-.86,0,0));visual.add(tail);
+  const dorsal=layeredFin([[-.38,0],[-.22,.28],[.12,.42],[.39,.08],[.36,0]],new THREE.Vector3(0,.31,0));visual.add(dorsal);
+  const ventral=layeredFin([[-.24,0],[-.05,-.20],[.24,-.14],[.34,0]],new THREE.Vector3(-.05,-.30,0));visual.add(ventral);
+  const leftFin=layeredFin([[0,0],[-.25,-.04],[-.05,.24],[.18,.08]],new THREE.Vector3(.18,-.02,.19),new THREE.Euler(Math.PI/2,-.12,.18));
+  const rightFin=layeredFin([[0,0],[-.25,-.04],[-.05,.24],[.18,.08]],new THREE.Vector3(.18,-.02,-.19),new THREE.Euler(-Math.PI/2,.12,.18));visual.add(leftFin,rightFin);
+  visual.add(makeEye(1),makeEye(-1));
+  const mouth=new THREE.Mesh(new THREE.TorusGeometry(.035,.008,8,24),new THREE.MeshPhysicalMaterial({color:0x170604,roughness:.3,clearcoat:.4}));
+  mouth.rotation.y=Math.PI/2;mouth.position.set(.872,-.04,0);visual.add(mouth);
+  let phase=0,normalTick=0;
+  function update(dt){
+    phase+=dt*5.1;
+    const pos=body.geometry.attributes.position,array=pos.array,base=body.base;
+    for(let i=0;i<pos.count;i++){
+      const j=i*3,x=base[j],y=base[j+1],z=base[j+2],tailWeight=smoothstep(.05,.98,(.72-x)/1.58);
+      const wave=Math.sin(phase-tailWeight*4.5)*(.006+.078*tailWeight*tailWeight);
+      array[j]=x-z*Math.cos(phase-tailWeight*4.5)*.04*tailWeight;array[j+1]=y;array[j+2]=z+wave;
+    }
+    pos.needsUpdate=true;if((normalTick++&1)===0)body.geometry.computeVertexNormals();
+    tail.rotation.y=Math.sin(phase-4.55)*.30;leftFin.rotation.z=.18+Math.sin(phase*.53)*.20;rightFin.rotation.z=.18-Math.sin(phase*.53)*.20;
+  }
+  return {scene:visual,animations:[],update,label:'Hero clownfish · procedural quality study',kind:'procedural'};
+}
+
 export function createHeroFish(aquarium){
   const swimmer=new THREE.Group(),visual=new THREE.Group();swimmer.add(visual);aquarium.add(swimmer);
 
