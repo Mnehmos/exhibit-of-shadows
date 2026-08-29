@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {R1} from './constants.js';
-import {val,rnd} from '../../core/controls.js';
-import {pick,disposeTree} from '../../core/utils.js';
+import {val} from '../../core/controls.js';
+import {rnd,pick,disposeTree} from '../../core/utils.js';
 
 /* R1.D01 plants + R1.D02 rocks — rebuilt from the Plant density slider */
 export function initHabitat(habitat){

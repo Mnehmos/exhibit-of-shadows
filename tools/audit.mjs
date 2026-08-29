@@ -45,6 +45,54 @@ for(const f of jsFiles){
 unlinkSync(tmp);
 const js=jsFiles.map(f=>`\n/* ${f.path} */\n${f.code}`).join('\n');
 
+section('import resolution (every local import resolves; named exports exist)');
+const byPath=new Map(jsFiles.map(f=>[f.path.replace(/\\/g,'/'),f]));
+const exportCache=new Map();
+function exportNames(code){
+  const names=new Set();
+  for(const m of code.matchAll(/export\s+(async\s+)?(function\*?|class|const|let|var)\s*/g)){
+    const kind=m[2];let i=m.index+m[0].length;
+    if(kind==='function'||kind==='class'){const n=/\w+/.exec(code.slice(i));if(n)names.add(n[0]);continue;}
+    let depth=0,j=i,start=i;
+    for(;j<code.length;j++){
+      const ch=code[j];
+      if('{(['.includes(ch))depth++;
+      else if('})]'.includes(ch))depth--;
+      else if(depth===0&&(ch===','||ch===';')){
+        const seg=code.slice(start,j),eq=seg.indexOf('=');
+        const n=/^\s*([A-Za-z_$][\w$]*)/.exec(eq===-1?seg:seg.slice(0,eq));
+        if(n)names.add(n[1]);
+        start=j+1;if(ch===';')break;
+      }
+    }
+  }
+  for(const m of code.matchAll(/export\s*\{([^}]+)\}/g))for(const n of m[1].split(',')){const t=n.trim().split(/\s+as\s+/).pop();if(t)names.add(t);}
+  return names;
+}
+function exportsOf(p){
+  if(exportCache.has(p))return exportCache.get(p);
+  const f=byPath.get(p);
+  const names=f?exportNames(f.code):new Set();
+  exportCache.set(p,names);
+  return names;
+}
+let importSites=0;
+for(const f of jsFiles){
+  const dir=path.dirname(f.path.replace(/\\/g,'/'));
+  for(const m of f.code.matchAll(/import\s+(?:\{([^}]*)\}|\*\s+as\s+\w+|(\w+))?\s*(?:from\s*)?'([^']+)'/g)){
+    const spec=m[3];
+    if(!spec.startsWith('.'))continue;                       // 'three' etc → importmap/CDN
+    importSites++;
+    const resolved=path.posix.normalize(path.posix.join(path.posix.dirname(f.path.replace(/\\/g,'/')),spec));
+    if(!byPath.has(resolved)){drift(`${f.path}: unresolved local import '${spec}'`);continue;}
+    const names=(m[1]||'').split(',').map(s=>s.trim().split(/\s+as\s+/)[0]).filter(Boolean);
+    const exp=exportsOf(resolved);
+    for(const n of names)
+      exp.has(n)?ok(`${f.path}: { ${n} } ← ${spec}`):drift(`${f.path}: '{ ${n} }' not exported by ${spec}`);
+  }
+}
+ok(`checked ${importSites} local import sites`);
+
 section('catalog → code (every italic code ref must exist)');
 const refAllow=new Set(['italics']);
 for(const r of [...new Set([...catalog.matchAll(/\*(\w+)\*/g)].map(m=>m[1]))]){

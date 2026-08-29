@@ -3,13 +3,12 @@ import {val,defineControl} from '../../core/controls.js';
 import {$} from '../../core/world.js';
 import {assets,loadFishPack} from '../../core/assets.js';
 import {fish,syncFish} from './minnow.js';
-import {buildHabitat} from './habitat.js';
 import {feedExhibit} from './food.js';
 
 /* R1.E systems: shadow play (E05), feeding buttons (E06), control declarations
    (E07/E11), magic systems (E12–E15), breathing + resize + status hooks */
 export function initSystems(parts){
-  const {galleryAmbient,lamps,centralLight,orbMat}=parts;
+  const {galleryAmbient,lamps,centralLight,orbMat,buildHabitat}=parts;
   let centralBase=680;
 
   function applyGallery(){

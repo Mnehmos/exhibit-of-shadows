@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import {R1} from './constants.js';
 import {state} from '../../core/state.js';
-import {val,clamp} from '../../core/controls.js';
-import {rnd,disposeTree} from '../../core/utils.js';
+import {val} from '../../core/controls.js';
+import {clamp,rnd,disposeTree} from '../../core/utils.js';
 import {foods,nearestFood,removeFood} from './food.js';
 
 /* R1.D03 minnows: procedural body (D03 mesh), boids + phototaxis + vortex AI,
