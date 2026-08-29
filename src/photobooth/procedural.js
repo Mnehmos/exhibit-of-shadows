@@ -18,11 +18,11 @@ function stripeColor(x,y){
 function heroBody(){
   const rings=58,sides=28,pos=[],idx=[],colors=[];
   for(let i=0;i<rings;i++){
-    const q=i/(rings-1),x=-1.02+q*2.04;
-    const tailRise=smoothstep(.02,.25,q),noseTaper=smoothstep(.72,1,q);
+    const q=i/(rings-1),noseTaper=smoothstep(.72,1,q),x=-1.02+q*2.04+.08*noseTaper;
+    const tailRise=smoothstep(.02,.25,q);
     const fullness=.62+.38*smoothstep(.12,.48,q);
     const belly=1+.10*Math.sin(q*Math.PI);
-    const roundedCap=Math.max(.03,Math.sqrt(Math.max(0,1-noseTaper*noseTaper)));
+    const roundedCap=.28+.72*Math.sqrt(Math.max(0,1-noseTaper*noseTaper));
     const ry=(.055+.43*tailRise)*fullness*roundedCap*belly;
     const rz=(.035+.245*tailRise)*(.93+.07*smoothstep(.25,.66,q))*roundedCap;
     for(let j=0;j<sides;j++){
@@ -32,7 +32,7 @@ function heroBody(){
     }
   }
   const tailCenter=pos.length/3;pos.push(-1.02,0,0);colors.push(ORANGE.r,ORANGE.g,ORANGE.b);
-  const headCenter=pos.length/3;pos.push(1.14,0,0);const nose=stripeColor(1.14,0);colors.push(nose.r,nose.g,nose.b);
+  const headCenter=pos.length/3;pos.push(1.10,0,0);const nose=stripeColor(1.10,0);colors.push(nose.r,nose.g,nose.b);
   for(let i=0;i<rings-1;i++)for(let j=0;j<sides;j++){
     const n=(j+1)%sides,a=i*sides+j,b=i*sides+n,c=(i+1)*sides+j,d=(i+1)*sides+n;
     idx.push(a,c,b,b,c,d);
@@ -62,7 +62,7 @@ function eye(side){
   root.traverse(o=>{if(o.isMesh)o.castShadow=true;});return root;
 }
 function mouth(side){
-  const curve=new THREE.CatmullRomCurve3([new THREE.Vector3(1.10,-.095,side*.17),new THREE.Vector3(1.045,-.135,side*.17),new THREE.Vector3(.975,-.118,side*.17)]);
+  const curve=new THREE.CatmullRomCurve3([new THREE.Vector3(1.075,-.055,side*.084),new THREE.Vector3(1.035,-.080,side*.12),new THREE.Vector3(.98,-.070,side*.16)]);
   const mesh=new THREE.Mesh(new THREE.TubeGeometry(curve,8,.011,6,false),new THREE.MeshStandardMaterial({color:0x1c0f12,roughness:.46}));mesh.castShadow=true;return mesh;
 }
 
