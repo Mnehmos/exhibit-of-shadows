@@ -1,6 +1,10 @@
 # The Exhibit of Shadows
 
-Standalone Three.js demo: a museum-scale cylindrical aquarium lit by a single shadow-casting light at its core — fish, plants, and visitors projected as silhouettes onto hanging sails and the hall walls.
+**Live exhibit:** https://mnehmos.github.io/exhibit-of-shadows/
+
+An online aquarium: a walkable, museum-scale cylindrical tank lit by a single shadow-casting light at its core — fish, plants, and visitors projected as silhouettes onto hanging sails and the hall walls. Bend its physics from the stagehand console: gravity, hall time, bioluminescence, minnow scale.
+
+Standalone three.js (MIT, loaded from CDN at runtime) — no build step, no dependencies on your machine beyond a browser.
 
 Inventory: **CATALOG.md**. Asset research: **ASSETS.md**. Build plan: **ORCHESTRATION.md**. Decision log: **DECISIONS.md**. Orientation check: `node tools/audit.mjs`.
 

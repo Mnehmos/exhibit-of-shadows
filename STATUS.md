@@ -4,6 +4,7 @@ Live state. Update at the end of every session.
 
 **Version:** v4 · **Phase 0 ✅ · Phase 1 ◐ (loader wired, awaiting asset pack) · Phases 2–8 open**
 **Run:** `python -m http.server 8137` in this folder → http://localhost:8137
+**Deploy:** public repo + GitHub Pages — https://mnehmos.github.io/exhibit-of-shadows/ (branch `main`, path `/`; Pages rebuilds on every push)
 **Check:** `node tools/audit.mjs` → AUDIT PASS required before closing a session.
 
 ## Playtest guide (5 minutes)
