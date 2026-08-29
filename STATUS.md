@@ -2,10 +2,11 @@
 
 Live state. Update at the end of every session.
 
-**Version:** v7 · **Phase 0 ✅ · Phase 1 ✅ · Phase 2 ✅ · Phase 3 ◐ (quality study live)**
+**Version:** v7.1 · **Phase 0 ✅ · Phase 1 ✅ · Phase 2 ✅ · Phase 3 ◐ (quality study + specimen booth live)**
 **Run:** `python -m http.server 8137` in this folder → http://localhost:8137
 **Deploy:** public repo + GitHub Pages — https://mnehmos.github.io/exhibit-of-shadows/ (branch `main`, path `/`; Pages rebuilds on every push)
 **Check:** `node tools/audit.mjs` → AUDIT PASS required before closing a session.
+**Inspect:** https://mnehmos.github.io/exhibit-of-shadows/photo-booth.html → all 11 GLBs isolated under identical framing and light.
 
 ## Playtest guide (5 minutes)
 
@@ -23,7 +24,7 @@ Live state. Update at the end of every session.
 | 0 plugin architecture | ✅ v3 |
 | 1 asset pipeline | ✅ v5.2 — 11 Quaternius CC0 GLBs live |
 | 2 livestock upgrade | ✅ v6 — mixed GLB troupe + AnimationMixer + collision |
-| 3 environment/materials | ◐ v7 — physical hero-fish study, transmissive water/glass, animated caustics, visual-smoke CI; production PBR assets remain |
+| 3 environment/materials | ◐ v7.1 — physical hero-fish study, transmissive water/glass, animated caustics, 11-model photo booth + visual-smoke CI; production PBR assets remain |
 | 4 balcony + collision | open |
 | 5 populate/POIs | open |
 | 6 vestibule | open |
