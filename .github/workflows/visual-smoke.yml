@@ -19,17 +19,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
-      - name: Plan capture scope
-        id: scope
-        run: |
-          changed="$(git diff-tree --no-commit-id --name-only -r HEAD)"
-          if [ -n "$changed" ] && ! printf '%s\n' "$changed" | grep -Evq '^(src/photobooth/procedural\.js|src/rooms/r1/heroFish\.js|tools/capture-photo-booth\.mjs|\.github/workflows/visual-smoke\.yml)$'; then
-            echo 'mode=full' >> "$GITHUB_OUTPUT"
-            echo 'Capture scope: full'
-          else
-            echo 'mode=hero' >> "$GITHUB_OUTPUT"
-            echo 'Capture scope: hero'
-          fi
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -39,18 +28,18 @@ jobs:
       - run: npm run audit
       - name: Start exhibit server
         run: python3 -m http.server 8137 > /tmp/exhibit-server.log 2>&1 &
-      - name: Render scenarios
-        if: steps.scope.outputs.mode == 'full'
-        run: node tools/capture-exhibit.mjs --url=http://127.0.0.1:8137 --scenarios=default,shadowplay --views=hero --settle=1800 --out=evidence/ci-capture
-      - name: Render changed hero
-        if: steps.scope.outputs.mode == 'hero'
-        run: node tools/capture-exhibit.mjs --url=http://127.0.0.1:8137 --scenarios=default --views=hero --settle=700 --out=evidence/ci-capture
-      - name: Capture isolated specimens
-        if: steps.scope.outputs.mode == 'full'
-        run: node tools/capture-photo-booth.mjs --url=http://127.0.0.1:8137 --out=evidence/ci-photo-booth
-      - name: Capture changed hero specimen
-        if: steps.scope.outputs.mode == 'hero'
-        run: node tools/capture-photo-booth.mjs --url=http://127.0.0.1:8137 --files=hero-clownfish.procedural --out=evidence/ci-photo-booth
+      - name: Capture changed scope
+        run: |
+          changed="$(git diff-tree --no-commit-id --name-only -r HEAD)"
+          if [ -n "$changed" ] && ! printf '%s\n' "$changed" | grep -Evq '^(src/photobooth/procedural\.js|src/rooms/r1/heroFish\.js|tools/capture-photo-booth\.mjs|\.github/workflows/visual-smoke\.yml)$'; then
+            echo 'Capture scope: full'
+            node tools/capture-exhibit.mjs --url=http://127.0.0.1:8137 --scenarios=default,shadowplay --views=hero --settle=1800 --out=evidence/ci-capture
+            node tools/capture-photo-booth.mjs --url=http://127.0.0.1:8137 --out=evidence/ci-photo-booth
+          else
+            echo 'Capture scope: hero'
+            node tools/capture-exhibit.mjs --url=http://127.0.0.1:8137 --scenarios=default --views=hero --settle=700 --out=evidence/ci-capture
+            node tools/capture-photo-booth.mjs --url=http://127.0.0.1:8137 --files=hero-clownfish.procedural --out=evidence/ci-photo-booth
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
