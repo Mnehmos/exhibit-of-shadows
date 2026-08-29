@@ -2,8 +2,7 @@ import * as THREE from 'three';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {assets,loadFishPack} from '../core/assets.js';
 import {createSpecimenStage,displayName} from './stage.js';
-import {createHeroFishSpecimen} from '../rooms/r1/heroFish.js';
-import {createMinnowSpecimen} from '../rooms/r1/minnow.js';
+import {createHeroFishSpecimen,createMinnowSpecimen} from './procedural.js';
 
 const $=s=>document.querySelector(s),mount=$('#mount');
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x071114);
