@@ -26,3 +26,11 @@ CATALOG.md and ORCHESTRATION.md are load-bearing, not prose: `tools/audit.mjs` v
 Context: proposal to split Gallery One into ~30 per-catalog-item files now (1:1 catalog↔file mapping, `build()/update()/rebuild()` contract, `core/state.js`, per-file materials).
 Decision: defer. The mapping benefit is already served by v3's section markers + CATALOG Code column + `tools/audit.mjs`; the split's real payoff (independent room folders, drop-in plugins) arrives exactly at Phase 7, where the proposal is adopted wholesale as the folder spec. Supersede ADR-002 early only if a trigger fires: script exceeds ~700 lines before Phase 7, two agents must edit concurrently, or a room needs runtime `import()` before Phase 7.
 Consequences: one file a while longer; zero re-litigation — the split design is already written down and audit-checked.
+
+**ADR-008 · controls are data — declarative control registry** (v4)
+Context: sliders were hand-written DOM + hand-wired listeners + hand-maintained output refresh; every new "impossible thing" risked three-file edits and drift.
+Decision: `defineControl({id,label,group,min,max,step,value,fmt,onChange})` is the only way a control exists. The stagehand console DOM is generated from the registry (`buildConsole()`), outputs auto-refresh (`refreshOutputs()`), and behavior reads live values via `val(id)`. Hall sliders, magic sliders, and any future room's controls all use the same path.
+Consequences: adding magic = one declaration; console layout/labels/formats change in one place; audit can verify the control surface statically. Group order follows declaration order (Visitor currently first — acceptable).
+
+**ADR-009 · magic systems are time-scale aware; the visitor is not** (v4)
+Hall time (`timeScale` slider) scales the world simulation (fish, food, motes, shadow-play breathing) but not visitor walk speed — the guest walks real-time through a slowed or accelerated hall. Player animation and camera stay on real dt.

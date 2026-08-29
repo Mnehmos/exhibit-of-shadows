@@ -51,7 +51,7 @@
 <div class="wrap">
   <div class="view">
     <div id="mount" aria-label="Traversable museum hall containing a giant cylindrical aquarium lit by a single central light. Fish shadows are cast radially onto hanging sails and the hall walls: the Exhibit of Shadows."></div>
-    <div class="hud" id="hud">Raising the curtainâ€¦</div>
+    <div class="hud" id="hud">Raising the curtain…</div>
 
     <div class="mode">
       <button type="button" id="firstBtn" class="active">1st</button>
@@ -74,32 +74,11 @@
         <div class="consoleHead">
           <div>
             <div class="consoleTitle">STAGEHAND CONSOLE</div>
-            <div class="consoleSub">hall controls Â· guest override</div>
+            <div class="consoleSub">hall controls · guest override</div>
           </div>
           <button type="button" id="consoleClose">Step away</button>
         </div>
-        <div class="controls">
-          <fieldset>
-            <legend>Exhibit</legend>
-            <div class="grid">
-              <div class="ctrl"><label>Fish <output id="fishCountOut"></output></label><input id="fishCount" type="range" min="6" max="28" value="16"></div>
-              <div class="ctrl"><label>Fish activity <output id="activityOut"></output></label><input id="activity" type="range" min="35" max="180" value="100"></div>
-              <div class="ctrl"><label>Schooling <output id="schoolingOut"></output></label><input id="schooling" type="range" min="0" max="100" value="64"></div>
-              <div class="ctrl"><label>Light pull <output id="lightPullOut"></output></label><input id="lightPull" type="range" min="0" max="200" value="45"></div>
-              <div class="ctrl"><label>Plant density <output id="plantsOut"></output></label><input id="plants" type="range" min="0" max="100" value="58"></div>
-            </div>
-          </fieldset>
-
-          <fieldset>
-            <legend>Shadow hall</legend>
-            <div class="grid">
-              <div class="ctrl"><label>Central light <output id="lightPowerOut"></output></label><input id="lightPower" type="range" min="180" max="1200" value="680" step="10"></div>
-              <div class="ctrl"><label>Shadow softness <output id="shadowSoftOut"></output></label><input id="shadowSoft" type="range" min="0" max="100" value="36"></div>
-              <div class="ctrl"><label>Gallery light <output id="galleryLightOut"></output></label><input id="galleryLight" type="range" min="0" max="100" value="16"></div>
-              <div class="ctrl"><label>Walk speed <output id="walkSpeedOut"></output></label><input id="walkSpeed" type="range" min="40" max="180" value="100"></div>
-            </div>
-          </fieldset>
-        </div>
+        <div class="controls" id="consoleGroups"></div>
       </div>
     </div>
   </div>
@@ -115,13 +94,16 @@
     <button type="button" id="resetPlayerBtn">Return to entrance</button>
   </div>
 
-  <div class="readout" id="readout" aria-live="polite">Initializing exhibit geometryâ€¦</div>
+  <div class="readout" id="readout" aria-live="polite">Initializing exhibit geometry…</div>
 </div>
 
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}
+</script>
 <script type="module">
 
 /* =====================================================================
-   THE EXHIBIT OF SHADOWS Â· v3 â€” Phase 0: room plugin architecture
+   THE EXHIBIT OF SHADOWS · v3 — Phase 0: room plugin architecture
    Master core owns services, input, the visitor, HUD, and the loop.
    Rooms mount through roomManifest (load order) and talk ONLY via ctx.
    Add a room = one line in roomManifest. Rooms never edit the core.
@@ -130,13 +112,18 @@
 (async()=>{
 const $=s=>document.querySelector(s),mount=$('#mount'),hud=$('#hud'),readout=$('#readout');
 let THREE;
-try{THREE=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/+esm');}
+try{THREE=await import('three');}
 catch(e){hud.textContent='Three.js could not load. This demo needs internet access for the Three.js module.';return;}
 
-/* ---------- CORE Â· services ---------- */
-const ids=['fishCount','activity','schooling','lightPull','plants','lightPower','shadowSoft','galleryLight','walkSpeed'];
-const ui={};for(const id of ids)ui[id]=$('#'+id);
-const val=id=>Number(ui[id].value),clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),rnd=(a,b)=>a+Math.random()*(b-a),pick=a=>a[Math.floor(Math.random()*a.length)];
+/* ---------- CORE · services ---------- */
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),rnd=(a,b)=>a+Math.random()*(b-a),pick=a=>a[Math.floor(Math.random()*a.length)];
+
+/* ---------- CORE · declarative control registry (ADR-008) ----------
+   Sliders are data: declare id/label/group/range/fmt/onChange, and the
+   stagehand console DOM is generated. Adding magic = one defineControl. */
+const controlDefs=[],controlMap=new Map();
+function defineControl(def){def.fmt=def.fmt||(v=>String(v));controlDefs.push(def);controlMap.set(def.id,def);return def;}
+const val=id=>{const d=controlMap.get(id);return d?d.value:0;};
 
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x111619);
@@ -172,10 +159,28 @@ const cameraProp=new THREE.Mesh(new THREE.BoxGeometry(.22,.14,.13),dark);cameraP
 
 function holdButton(el,onStart,onEnd){let p=null;el.addEventListener('pointerdown',e=>{p=e.pointerId;onStart();el.setPointerCapture?.(e.pointerId);});el.addEventListener('pointerup',e=>{if(e.pointerId===p){p=null;onEnd();}});el.addEventListener('pointercancel',()=>{p=null;onEnd();});}
 
-const ctx={THREE,scene,camera,renderer,mount,hud,readout,ui,val,clamp,rnd,pick,state,player,consolePoints,
+/* ---------- CORE · asset pipeline (Phase 1: wired, inert until assets/fish) ---------- */
+const assets={status:'unchecked',fish:[]};
+async function loadFishPack(dir='assets/fish'){
+  assets.status='loading';
+  try{
+    const res=await fetch(dir+'/manifest.json');
+    if(!res.ok)throw new Error('manifest '+res.status);
+    const list=await res.json();
+    if(!Array.isArray(list)||!list.length)throw new Error('manifest empty');
+    const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');
+    const loader=new GLTFLoader();
+    assets.fish=await Promise.all(list.map(name=>new Promise((resolve,reject)=>loader.load(dir+'/'+name,g=>resolve(g.scene),undefined,reject))));
+    assets.status='ready · '+assets.fish.length+' models';
+  }catch(e){assets.fish=[];assets.status='none — procedural troupe';}
+  return assets.fish;
+}
+
+const ctx={THREE,scene,camera,renderer,mount,hud,readout,val,clamp,rnd,pick,state,player,consolePoints,assets,loadFishPack,
+  controls:{define:defineControl},
   onFrame:f=>frameHooks.push(f),onResize:f=>resizeHooks.push(f),registerStatus:f=>statusHooks.push(f),holdButton,$};
 
-/* ---------- CORE Â· input ---------- */
+/* ---------- CORE · input ---------- */
 const keys={};let joyX=0,joyY=0;
 window.addEventListener('keydown',e=>{if(['KeyW','KeyA','KeyS','KeyD'].includes(e.code)){keys[e.code]=true;e.preventDefault();}});
 window.addEventListener('keyup',e=>{if(['KeyW','KeyA','KeyS','KeyD'].includes(e.code))keys[e.code]=false;});
@@ -213,7 +218,7 @@ joystick.addEventListener('pointerup',releaseJoy);joystick.addEventListener('poi
 holdButton($('#forwardBtn'),()=>keys.KeyW=true,()=>keys.KeyW=false);holdButton($('#backBtn'),()=>keys.KeyS=true,()=>keys.KeyS=false);
 holdButton($('#turnLeftBtn'),()=>keys.turnL=true,()=>keys.turnL=false);holdButton($('#turnRightBtn'),()=>keys.turnR=true,()=>keys.turnR=false);
 
-/* ---------- CORE Â· visitor movement & camera ---------- */
+/* ---------- CORE · visitor movement & camera ---------- */
 function clampPlayer(){const r=Math.hypot(player.pos.x,player.pos.z);if(r<player.minR){const s=player.minR/(r||.001);player.pos.x*=s;player.pos.z*=s;}if(r>player.maxR){const s=player.maxR/r;player.pos.x*=s;player.pos.z*=s;}}
 function resetPlayer(){player.pos.copy(player.spawn);player.yaw=0;player.pitch=0;player.group.position.copy(player.pos);}
 function forwardVector(){return new THREE.Vector3(Math.sin(player.yaw),0,-Math.cos(player.yaw));}
@@ -245,7 +250,7 @@ function updateCamera(){
   }
 }
 
-/* ---------- CORE Â· stagehand console system ---------- */
+/* ---------- CORE · stagehand console system ---------- */
 const consolePanel=$('#consolePanel'),promptEl=$('#prompt');
 function nearConsole(){return consolePoints.length>0&&player.pos.distanceTo(consolePoints[0])<2.6;}
 function openConsole(){
@@ -261,29 +266,28 @@ window.addEventListener('keydown',e=>{
   else if(e.code==='KeyE'&&!e.repeat){if(state.consoleOpen)closeConsole();else if(nearConsole())openConsole();}
 });
 
-/* ---------- CORE Â· mode, reset, pause ---------- */
+/* ---------- CORE · mode, reset, pause ---------- */
 function setMode(mode){player.viewMode=mode;$('#firstBtn').classList.toggle('active',mode==='first');$('#thirdBtn').classList.toggle('active',mode==='third');}
 $('#firstBtn').addEventListener('click',()=>setMode('first'));$('#thirdBtn').addEventListener('click',()=>setMode('third'));
 $('#resetPlayerBtn').addEventListener('click',resetPlayer);
 $('#pauseBtn').addEventListener('click',e=>{state.running=!state.running;e.currentTarget.textContent=state.running?'Pause':'Play';});
 
-function refreshCoreOutputs(){$('#walkSpeedOut').value=(val('walkSpeed')/100).toFixed(2)+'Ã—';}
-ui.walkSpeed.addEventListener('input',refreshCoreOutputs);
+defineControl({id:'walkSpeed',label:'Walk speed',group:'Visitor',min:40,max:180,step:1,value:100,fmt:v=>(v/100).toFixed(2)+'×'});
 
-/* ---------- CORE Â· resize, HUD, loop ---------- */
+/* ---------- CORE · resize, HUD, loop ---------- */
 function resize(){const r=mount.getBoundingClientRect(),w=Math.max(320,r.width),h=w*9/16;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();for(const f of resizeHooks)f(w);}
 new ResizeObserver(resize).observe(mount);
 
 const desktopPointer=matchMedia('(hover:hover) and (pointer:fine)').matches;
 function updateHud(){
   const r=Math.hypot(player.pos.x,player.pos.z);
-  if(state.consoleOpen){promptEl.hidden=false;promptEl.innerHTML='<kbd>E</kbd> / <kbd>ESC</kbd> â€” step away';}
-  else if(nearConsole()){promptEl.hidden=false;promptEl.innerHTML=desktopPointer?'<kbd>E</kbd> â€” Stagehand console':'You approach the stagehand console';}
+  if(state.consoleOpen){promptEl.hidden=false;promptEl.innerHTML='<kbd>E</kbd> / <kbd>ESC</kbd> — step away';}
+  else if(nearConsole()){promptEl.hidden=false;promptEl.innerHTML=desktopPointer?'<kbd>E</kbd> — Stagehand console':'You approach the stagehand console';}
   else promptEl.hidden=true;
-  const lookHint=desktopPointer?(document.pointerLockElement===lookEl?' Â· ESC frees the mouse':' Â· click scene for mouse-look'):'';
-  let text=(state.shadowPlay?'SHADOW PLAY Â· ':'')+'Exhibit of Shadows Â· '+(player.viewMode==='first'?'first-person':'third-person');
-  for(const f of statusHooks)text+=' Â· '+f();
-  hud.textContent=text+' Â· radial '+r.toFixed(1)+' m'+lookHint;
+  const lookHint=desktopPointer?(document.pointerLockElement===lookEl?' · ESC frees the mouse':' · click scene for mouse-look'):'';
+  let text=(state.shadowPlay?'SHADOW PLAY · ':'')+'Exhibit of Shadows · '+(player.viewMode==='first'?'first-person':'third-person');
+  for(const f of statusHooks)text+=' · '+f();
+  hud.textContent=text+' · radial '+r.toFixed(1)+' m'+lookHint;
 }
 
 let last=performance.now(),metricClock=0;
@@ -299,7 +303,7 @@ function frame(now){
   renderer.render(scene,camera);requestAnimationFrame(frame);
 }
 
-/* ---------- CORE Â· shadow discipline ----------
+/* ---------- CORE · shadow discipline ----------
    Every non-transparent mesh blocks light. Transparent materials (glass,
    water, beam, sheer sail cloth) and userData.noCast exemptions do not. */
 function applyShadowCasting(){
@@ -311,22 +315,41 @@ function applyShadowCasting(){
   });
 }
 
-/* ---------- ROOM PLUGINS (load order â€” plugins.txt) ---------- */
+function buildConsole(){
+  const host=$('#consoleGroups');if(!host)return;
+  const groups=new Map();
+  for(const def of controlDefs){
+    let g=groups.get(def.group);
+    if(!g){const fs=document.createElement('fieldset');const lg=document.createElement('legend');lg.textContent=def.group;const grid=document.createElement('div');grid.className='grid';fs.append(lg,grid);groups.set(def.group,{fs,grid});g=groups.get(def.group);}
+    const wrap=document.createElement('div');wrap.className='ctrl';
+    const lab=document.createElement('label');
+    const name=document.createElement('span');name.textContent=def.label;
+    const out=document.createElement('output');out.id=def.id+'Out';out.textContent=def.fmt(def.value);
+    lab.append(name,out);
+    const inp=document.createElement('input');inp.type='range';inp.min=def.min;inp.max=def.max;inp.step=def.step||1;inp.value=def.value;
+    inp.addEventListener('input',()=>{def.value=Number(inp.value);out.textContent=def.fmt(def.value);if(def.onChange)def.onChange(def.value);});
+    wrap.append(lab,inp);g.grid.appendChild(wrap);
+  }
+  for(const g of groups.values())host.appendChild(g.fs);
+}
+function refreshOutputs(){for(const def of controlDefs){const out=$('#'+def.id+'Out');if(out)out.textContent=def.fmt(def.value);}}
+
+/* ---------- ROOM PLUGINS (load order — plugins.txt) ---------- */
 const roomManifest=[
   {id:'r1-gallery-one',mount:buildGalleryOne},
   {id:'demo-room',mount:()=>{}},
 ];
 for(const room of roomManifest)room.mount(ctx);
-applyShadowCasting();
-resize();refreshCoreOutputs();resetPlayer();setMode('first');
+buildConsole();refreshOutputs();applyShadowCasting();
+resize();resetPlayer();setMode('first');
 if(!state.running)$('#pauseBtn').textContent='Play';
 updateHud();requestAnimationFrame(frame);
 
 /* =====================================================================
-   ROOM r1-gallery-one Â· "The Exhibit of Shadows" â€” master exhibit hall
+   ROOM r1-gallery-one · "The Exhibit of Shadows" — master exhibit hall
    ===================================================================== */
 function buildGalleryOne(ctx){
-  const {THREE,scene,ui,val,clamp,rnd,pick,state,player,consolePoints,onFrame,onResize,registerStatus,$}=ctx;
+  const {THREE,scene,val,clamp,rnd,pick,state,player,consolePoints,onFrame,onResize,registerStatus,$,loadFishPack}=ctx;
   const root=new THREE.Group();scene.add(root);
   const HALL_R=10.8,HALL_H=12.8,TANK_R=3.15,TANK_H=8.6,TANK_CENTER_Y=4.55,LIGHT_COLUMN_R=.48;
   player.setBounds(TANK_R+.82,HALL_R-.68);player.setSpawn(0,HALL_R-2.0);
@@ -448,7 +471,7 @@ function buildGalleryOne(ctx){
     g.fillStyle='#e8dfc8';g.font='600 62px Georgia,serif';g.textAlign='center';g.textBaseline='middle';
     g.fillText('THE EXHIBIT OF SHADOWS',512,102);
     g.fillStyle='#9a958a';g.font='34px Georgia,serif';
-    g.fillText('SILO AQUARIUM MUSEUM Â· GALLERY ONE',512,178);
+    g.fillText('SILO AQUARIUM MUSEUM · GALLERY ONE',512,178);
     const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t;
   }
   const plaque=new THREE.Group();
@@ -465,7 +488,7 @@ function buildGalleryOne(ctx){
     g.fillStyle='#d8c89d';g.font='600 46px Georgia,serif';g.textAlign='center';
     g.fillText('STAGEHAND',256,104);g.fillText('CONSOLE',256,156);
     g.fillStyle='#9a958a';g.font='26px Georgia,serif';
-    g.fillText('hall controls Â· guest override',256,222);
+    g.fillText('hall controls · guest override',256,222);
     g.fillStyle='#6f6a60';g.font='22px Georgia,serif';
     g.fillText('approach and press E',256,262);
     const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t;
@@ -498,14 +521,14 @@ function buildGalleryOne(ctx){
     }
     for(let i=0;i<rings-1;i++)for(let j=0;j<sides;j++){const n=(j+1)%sides,a=i*sides+j,b=i*sides+n,c=(i+1)*sides+j,d=(i+1)*sides+n;idx.push(a,c,b,b,c,d);}
     const geom=new THREE.BufferGeometry();geom.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geom.setIndex(idx);geom.computeVertexNormals();geom.userData.base=new Float32Array(pos);geom.userData.u=new Float32Array(u);
-    const body=new THREE.Mesh(geom,new THREE.MeshStandardMaterial({color:0x9aa69d,roughness:.38,metalness:.10}));body.castShadow=true;group.add(body);
+    const body=new THREE.Mesh(geom,new THREE.MeshStandardMaterial({color:0x9aa69d,roughness:.38,metalness:.10,emissive:0x7fd4c1,emissiveIntensity:0}));body.castShadow=true;group.add(body);
     const finMat=new THREE.MeshStandardMaterial({color:0x686f68,roughness:.64,transparent:true,opacity:.92,side:THREE.DoubleSide});
     const tailPivot=new THREE.Group();tailPivot.position.x=-.455;
     const tail=new THREE.Mesh(shape([[0,.022],[-.11,.11],[-.29,.16],[-.23,.038],[-.16,0],[-.23,-.038],[-.29,-.16],[-.11,-.11],[0,-.022]]),finMat);tail.castShadow=true;tailPivot.add(tail);group.add(tailPivot);
     const dorsal=new THREE.Mesh(shape([[.10,0],[0,.13],[-.15,.10],[-.23,.02],[-.24,0]]),finMat);dorsal.position.y=.095;dorsal.castShadow=true;group.add(dorsal);
     const eyeGeo=new THREE.SphereGeometry(.021,7,5),eyeMat=new THREE.MeshStandardMaterial({color:0x050606});
     for(const z of [-.052,.052]){const eye=new THREE.Mesh(eyeGeo,eyeMat);eye.position.set(.34,.032,z);group.add(eye);}
-    return{group,geom,tailPivot};
+    return{group,geom,tailPivot,bodyMat:body.material};
   }
 
   function disposeTree(rootObj){rootObj.traverse(n=>{n.geometry?.dispose();if(Array.isArray(n.material))n.material.forEach(m=>m.dispose());else n.material?.dispose();});}
@@ -532,7 +555,7 @@ function buildGalleryOne(ctx){
 
   const fish=[],foods=[],A=new THREE.Vector3(),B=new THREE.Vector3(),C=new THREE.Vector3(),XAXIS=new THREE.Vector3(1,0,0);
   function randomFishPosition(){const a=rnd(0,6.28),r=rnd(LIGHT_COLUMN_R+.52,TANK_R-.42);return new THREE.Vector3(Math.sin(a)*r,rnd(-TANK_H*.39,TANK_H*.39),Math.cos(a)*r);}
-  function createFish(){const m=minnowMesh(),f={...m,pos:randomFishPosition(),vel:new THREE.Vector3(rnd(-1,1),rnd(-.25,.25),rnd(-1,1)).normalize().multiplyScalar(rnd(.38,.68)),acc:new THREE.Vector3(),wander:new THREE.Vector3(rnd(-1,1),rnd(-.4,.4),rnd(-1,1)).normalize(),noise:new THREE.Vector3(),phase:rnd(0,6.28),decision:rnd(.25,1.2),state:'cruise',food:null,size:rnd(.70,1.07),preferred:rnd(.40,.65)};f.group.scale.setScalar(f.size);fishGroup.add(f.group);fish.push(f);}
+  function createFish(){const m=minnowMesh(),f={...m,pos:randomFishPosition(),vel:new THREE.Vector3(rnd(-1,1),rnd(-.25,.25),rnd(-1,1)).normalize().multiplyScalar(rnd(.38,.68)),acc:new THREE.Vector3(),wander:new THREE.Vector3(rnd(-1,1),rnd(-.4,.4),rnd(-1,1)).normalize(),noise:new THREE.Vector3(),phase:rnd(0,6.28),decision:rnd(.25,1.2),state:'cruise',food:null,size:rnd(.70,1.07),preferred:rnd(.40,.65)};f.group.scale.setScalar(f.size*val('fishScale')/100);fishGroup.add(f.group);fish.push(f);}
   function syncFish(){while(fish.length<val('fishCount'))createFish();while(fish.length>val('fishCount')){const f=fish.pop();fishGroup.remove(f.group);disposeTree(f.group);}}
   function aquariumBoundsForce(f){
     const p=C.copy(f.pos).addScaledVector(f.vel,.75),rad=Math.hypot(p.x,p.z),outer=TANK_R-.34,inner=LIGHT_COLUMN_R+.30,force=new THREE.Vector3();
@@ -547,13 +570,14 @@ function buildGalleryOne(ctx){
   function removeFood(food){const i=foods.indexOf(food);if(i>=0){foodGroup.remove(food.mesh);foods.splice(i,1);}}
   const foodGeo=new THREE.SphereGeometry(.035,7,5),foodMats=[0xd7ac5d,0xc28d43,0xe0bb6f].map(c=>new THREE.MeshStandardMaterial({color:c,roughness:.75}));
   function feedExhibit(){for(let i=0;i<12;i++){const a=rnd(0,6.28),r=rnd(.8,TANK_R-.5),mesh=new THREE.Mesh(foodGeo,pick(foodMats));const food={mesh,pos:new THREE.Vector3(Math.sin(a)*r,TANK_H*.38+rnd(-.10,.12),Math.cos(a)*r),vel:new THREE.Vector3(rnd(-.03,.03),-.02,rnd(-.03,.03)),age:0};mesh.position.copy(food.pos);mesh.castShadow=true;foodGroup.add(mesh);foods.push(food);}for(const f of fish)f.decision=0;}
-  function updateFood(food,dt){food.age+=dt;food.vel.y-=.018*dt;food.vel.multiplyScalar(1-dt*.15);food.pos.addScaledVector(food.vel,dt);if(food.pos.y<-TANK_H*.42){food.pos.y=-TANK_H*.42;food.vel.y=0;}food.mesh.position.copy(food.pos);if(food.age>28)removeFood(food);}
+  function updateFood(food,dt){food.age+=dt;food.vel.y-=.018*dt*(val('gravity')/100);food.vel.multiplyScalar(1-dt*.15);food.pos.addScaledVector(food.vel,dt);if(food.pos.y<-TANK_H*.42){food.pos.y=-TANK_H*.42;food.vel.y=0;}food.mesh.position.copy(food.pos);if(food.age>28)removeFood(food);}
   function updateFish(f,dt,t){
     f.decision-=dt;if(f.decision<=0){f.decision=rnd(.25,1.25);const food=nearestFood(f);if(food){f.state='feed';f.food=food;}else{f.state=Math.random()<.18?'explore':'cruise';f.wander.set(rnd(-1,1),rnd(-.45,.45),rnd(-1,1)).normalize();}}
     f.noise.x=THREE.MathUtils.lerp(f.noise.x,rnd(-1,1),dt*.7);f.noise.y=THREE.MathUtils.lerp(f.noise.y,rnd(-.5,.5),dt*.7);f.noise.z=THREE.MathUtils.lerp(f.noise.z,rnd(-1,1),dt*.7);
     f.acc.set(0,0,0).add(aquariumBoundsForce(f)).add(social(f)).add(currentField(f.pos,t)).addScaledVector(f.noise,.08);
     const pull=state.shadowPlay?1.35:val('lightPull')/100;
     if(pull>0){f.acc.x+=-f.pos.x*pull*.16;f.acc.z+=-f.pos.z*pull*.16;const sw=state.shadowPlay?.5:.11*pull;f.acc.x+=-f.pos.z*sw;f.acc.z+=f.pos.x*sw;}
+    f.acc.y-=(val('gravity')/100-1)*.25;
     if(f.state==='feed'&&f.food&&foods.includes(f.food)){B.subVectors(f.food.pos,f.pos);const d=B.length();f.acc.add(B.normalize().multiplyScalar(1.05));if(d<.12){removeFood(f.food);f.food=null;f.state='cruise';}}
     else if(f.state==='explore')f.acc.addScaledVector(f.wander,.20);
     const act=val('activity')/100;f.vel.addScaledVector(f.acc,dt);let target=f.preferred*act;if(f.state==='feed')target=1.15*act;if(state.shadowPlay)target=Math.max(target,1.0*Math.max(act,.8));if(f.vel.length()>.001){B.copy(f.vel).normalize().multiplyScalar(target);f.vel.lerp(B,Math.min(1,dt*(f.state==='feed'?4.2:1.4)));}if(f.vel.length()>1.45*act)f.vel.setLength(1.45*act);f.vel.multiplyScalar(1-dt*.05);f.pos.addScaledVector(f.vel,dt);
@@ -576,28 +600,24 @@ function buildGalleryOne(ctx){
     if(!on){centralLight.intensity=centralBase;orbMat.emissiveIntensity=4;}
     applyGallery();
   }
+  function setGlow(v){const k=v/100*2.2;for(const f of fish)f.bodyMat.emissiveIntensity=k;}
+  function setScale(v){for(const f of fish)f.group.scale.setScalar(f.size*v/100);}
   $('#feedAction').addEventListener('click',feedExhibit);$('#feedBtn').addEventListener('click',feedExhibit);
   $('#centerAction').addEventListener('click',()=>{player.yaw=Math.atan2(-player.pos.x,player.pos.z);player.pitch=.05;});
   $('#playBtn').addEventListener('click',()=>setShadowPlay(!state.shadowPlay));
 
-  function refreshExhibitOutputs(){
-    $('#fishCountOut').value=val('fishCount');
-    $('#activityOut').value=(val('activity')/100).toFixed(2)+'Ã—';
-    $('#schoolingOut').value=(val('schooling')/100).toFixed(2);
-    $('#lightPullOut').value=(val('lightPull')/100).toFixed(2)+'Ã—';
-    $('#plantsOut').value=(val('plants')/100).toFixed(2);
-    $('#lightPowerOut').value=val('lightPower').toFixed(0);
-    $('#shadowSoftOut').value=(val('shadowSoft')/100).toFixed(2);
-    $('#galleryLightOut').value=(val('galleryLight')/100).toFixed(2);
-  }
-  ui.fishCount.addEventListener('input',()=>{syncFish();refreshExhibitOutputs();});
-  ui.activity.addEventListener('input',refreshExhibitOutputs);
-  ui.schooling.addEventListener('input',refreshExhibitOutputs);
-  ui.lightPull.addEventListener('input',refreshExhibitOutputs);
-  ui.plants.addEventListener('input',()=>{buildHabitat();refreshExhibitOutputs();});
-  ui.lightPower.addEventListener('input',()=>{centralBase=val('lightPower');if(!state.shadowPlay)centralLight.intensity=centralBase;refreshExhibitOutputs();});
-  ui.shadowSoft.addEventListener('input',()=>{centralLight.shadow.radius=1+val('shadowSoft')/12;refreshExhibitOutputs();});
-  ui.galleryLight.addEventListener('input',()=>{applyGallery();refreshExhibitOutputs();});
+  defineControl({id:'fishCount',label:'Minnows',group:'Exhibit',min:6,max:28,step:1,value:16,onChange:syncFish});
+  defineControl({id:'activity',label:'Fish activity',group:'Exhibit',min:35,max:180,step:1,value:100,fmt:v=>(v/100).toFixed(2)+'×'});
+  defineControl({id:'schooling',label:'Schooling',group:'Exhibit',min:0,max:100,step:1,value:64,fmt:v=>(v/100).toFixed(2)});
+  defineControl({id:'lightPull',label:'Light pull',group:'Exhibit',min:0,max:200,step:1,value:45,fmt:v=>(v/100).toFixed(2)+'×'});
+  defineControl({id:'plants',label:'Plant density',group:'Exhibit',min:0,max:100,step:1,value:58,fmt:v=>(v/100).toFixed(2),onChange:buildHabitat});
+  defineControl({id:'gravity',label:'Gravity',group:'Impossible things',min:-100,max:200,step:1,value:100,fmt:v=>(v/100).toFixed(2)+'×'});
+  defineControl({id:'timeScale',label:'Hall time',group:'Impossible things',min:10,max:300,step:1,value:100,fmt:v=>(v/100).toFixed(2)+'×'});
+  defineControl({id:'glow',label:'Bioluminescence',group:'Impossible things',min:0,max:100,step:1,value:0,fmt:v=>Math.round(v)+'%',onChange:setGlow});
+  defineControl({id:'fishScale',label:'Minnow scale',group:'Impossible things',min:30,max:250,step:1,value:100,fmt:v=>(v/100).toFixed(2)+'×',onChange:setScale});
+  defineControl({id:'lightPower',label:'Central light',group:'Shadow hall',min:180,max:1200,step:10,value:680,onChange:v=>{centralBase=v;if(!state.shadowPlay)centralLight.intensity=centralBase;}});
+  defineControl({id:'shadowSoft',label:'Shadow softness',group:'Shadow hall',min:0,max:100,step:1,value:36,fmt:v=>(v/100).toFixed(2),onChange:v=>{centralLight.shadow.radius=1+v/12;}});
+  defineControl({id:'galleryLight',label:'Gallery light',group:'Shadow hall',min:0,max:100,step:1,value:16,fmt:v=>(v/100).toFixed(2),onChange:applyGallery});
 
   onResize(w=>{const s=w<620?512:1024;if(centralLight.shadow.mapSize.x!==s){centralLight.shadow.mapSize.set(s,s);if(centralLight.shadow.map){centralLight.shadow.map.dispose();centralLight.shadow.map=null;}}});
   onFrame((dt,t)=>{
@@ -606,11 +626,13 @@ function buildGalleryOne(ctx){
     for(const f of fish)updateFish(f,dt,t);
     for(const food of [...foods])updateFood(food,dt);
   });
-  registerStatus(()=>fish.length+' minnows Â· '+fish.filter(f=>f.state==='feed').length+' feeding');
+  registerStatus(()=>fish.length+' minnows · '+fish.filter(f=>f.state==='feed').length+' feeding');
 
-  readout.innerHTML='<strong>The Exhibit of Shadows.</strong> A single shadow-casting PointLight burns at the heart of the tank â€” the only instrument in the hall. Its six-direction shadow map throws every minnow, plant, and visitor onto eight hanging sails, the gallery wall, floor, and ceiling. Physics bends around the core: the <em>Light pull</em> slider tugs the school into orbit like moths, and <em>Shadow play</em> dims the gallery, sets the core breathing, and winds the fish into a slow vortex of silhouettes. All hall controls live at the stagehand console by the far wall.';
+  readout.innerHTML='<strong>The Exhibit of Shadows.</strong> A single shadow-casting PointLight burns at the heart of the tank — the only instrument in the hall. Its six-direction shadow map throws every minnow, plant, and visitor onto eight hanging sails, the gallery wall, floor, and ceiling. Physics bends around the core: the <em>Light pull</em> slider tugs the school into orbit like moths, and <em>Shadow play</em> dims the gallery, sets the core breathing, and winds the fish into a slow vortex of silhouettes. All hall controls live at the stagehand console by the far wall.';
 
-  buildHabitat();syncFish();refreshExhibitOutputs();
+  buildHabitat();syncFish();setGlow(val('glow'));setScale(val('fishScale'));
+  loadFishPack().then(()=>{/* Phase 2: swap GLB models in when a pack lands in assets/fish */});
+  registerStatus(()=>'assets: '+ctx.assets.status);
   centralBase=val('lightPower');centralLight.intensity=centralBase;centralLight.shadow.radius=1+val('shadowSoft')/12;applyGallery();
   return{root};
 }

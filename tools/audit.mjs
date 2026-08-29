@@ -37,7 +37,9 @@ for(const r of [...new Set([...catalog.matchAll(/\*(\w+)\*/g)].map(m=>m[1]))]){
 
 section('code → plan (rooms and section tags must be documented)');
 const docs=catalog+(orch||'');
-for(const room of [...new Set([...js.matchAll(/id:'([^']+)'/g)].map(m=>m[1]))])
+const manifest=/const roomManifest=([\s\S]*?);/.exec(js);
+if(!manifest){drift('roomManifest block not found');}
+else for(const room of [...new Set([...manifest[1].matchAll(/id:'([^']+)'/g)].map(m=>m[1]))])
   docs.includes(room)?ok(`room id '${room}' documented`):drift(`room id '${room}' not in CATALOG/ORCHESTRATION`);
 for(const tag of [...new Set([...js.matchAll(/R1\.([A-E])\b/g)].map(m=>'R1.'+m[1]))].sort())
   docs.includes(tag)?ok(`section tag ${tag} documented`):drift(`section tag ${tag} not in CATALOG/ORCHESTRATION`);
@@ -45,9 +47,11 @@ for(const tag of [...new Set([...js.matchAll(/R1\.([A-E])\b/g)].map(m=>'R1.'+m[1
 section('structural invariants');
 /const roomManifest=/.test(js)?ok('roomManifest declared (plugin load order)'):drift('roomManifest missing');
 /applyShadowCasting/.test(js)?ok('shadow discipline pass present (ADR-004)'):drift('applyShadowCasting missing');
-const sliders=['fishCount','activity','schooling','lightPull','plants','lightPower','shadowSoft','galleryLight','walkSpeed'];
-const missing=sliders.filter(id=>!html.includes(`id="${id}"`));
-missing.length?drift('stagehand sliders missing from DOM: '+missing.join(', ')):ok('all 9 stagehand sliders present');
+/const controlDefs=/.test(js)?ok('declarative control registry present (ADR-008)'):drift('control registry missing');
+const controls=['fishCount','activity','schooling','lightPull','plants','lightPower','shadowSoft','galleryLight','walkSpeed','gravity','timeScale','glow','fishScale'];
+const missing=controls.filter(id=>!js.includes(`id:'${id}'`));
+missing.length?drift('controls not declared: '+missing.join(', ')):ok(`all ${controls.length} controls declared (9 hall + 4 magic)`);
+html.includes('id="consoleGroups"')?ok('console DOM mount present'):drift('consoleGroups container missing');
 const openN=(html.match(/<div\b/g)||[]).length,closeN=(html.match(/<\/div>/g)||[]).length;
 openN===closeN?ok(`div balance (${openN}/${closeN})`):drift(`div imbalance (${openN} open / ${closeN} close)`);
 

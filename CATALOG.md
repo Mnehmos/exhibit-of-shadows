@@ -64,6 +64,11 @@ The main hall: a cylinder R 10.8 m × H 12.8 m with the centerpiece tank at its 
 | R1-E08 | Radiant visitors | PLANNED (Phase 5): 2–3 wanderers reusing the player rig + steering | — |
 | R1-E09 | Room manifest (plugin load order) | Rooms mount through ctx services; demo-room line proves the one-line add | *roomManifest* |
 | R1-E10 | Shadow discipline pass | Every non-transparent mesh casts; glass/water/beam/sheer sails and userData.noCast exempt | *applyShadowCasting* |
+| R1-E11 | Declarative control registry | Controls are data (`defineControl`); console DOM generated; audit-verified surface | *defineControl* |
+| R1-E12 | Gravity system (magic) | −100…200% — pellet sink rate + fish buoyancy force | *updateFish/updateFood* |
+| R1-E13 | Hall time (magic) | 10…300% world-time scale; visitor stays real-time (ADR-009) | *frame()* |
+| R1-E14 | Bioluminescence (magic) | 0–100% fish-body emissive glow `#7fd4c1` — pairs with Shadow play | *setGlow* |
+| R1-E15 | Minnow scale (magic) | 30–250% live troupe resize; bounds clamping absorbs giants | *setScale* |
 
 ---
 
@@ -98,6 +103,7 @@ Near-black room, drifting bell meshes, single upward light; the purest shadow ro
 | D-FLOOR / D-CEIL | R1 floor & ceiling | fan/radial shadows | R1-C08 |
 
 ## Changelog
+- **v4 — magic systems + declarative console**: control registry (E11) generates the stagehand console; added Impossible things — gravity E12, hall time E13, bioluminescence E14, minnow scale E15; Phase 1 asset pipeline wired (importmap + `loadFishPack`, inert until `assets/fish/manifest.json`); repo git-initialized; STATUS/KNOWN-ISSUES docs added.
 - **v3 — plugin architecture + orientation tools**: Phase 0 landed — master core + `roomManifest` (`r1-gallery-one`, `demo-room`) with ctx contract (ADR-003); stagehand console booth relocated to the 45° sail gap facing the tank (ADR-005: sliders now in-sim only); shadow discipline pass E10, sail cloth now sheer (ADR-004); `tools/audit.mjs` added (ADR-006).
 - **v2 — theme pass**: exhibit renamed; added R1-B04 sails, R1-C06 beam gradient, R1-C09 motes, R1-C10 plaque, R1-E05 shadow play, light-pull phototaxis; darkened A02/A03-adjacent palette.
 - **v1 — original**: hall, tank, procedural minnows, sliders, first import.
