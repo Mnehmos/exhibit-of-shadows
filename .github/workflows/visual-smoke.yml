@@ -21,16 +21,14 @@ jobs:
           fetch-depth: 2
       - name: Plan capture scope
         id: scope
-        env:
-          BEFORE: ${{ github.event.before }}
         run: |
-          base="$BEFORE"
-          if ! git cat-file -e "$base^{commit}" 2>/dev/null; then base=HEAD^; fi
-          changed="$(git diff --name-only "$base" HEAD)"
+          changed="$(git diff-tree --no-commit-id --name-only -r HEAD)"
           if [ -n "$changed" ] && ! printf '%s\n' "$changed" | grep -Evq '^(src/photobooth/procedural\.js|src/rooms/r1/heroFish\.js|tools/capture-photo-booth\.mjs|\.github/workflows/visual-smoke\.yml)$'; then
             echo 'mode=full' >> "$GITHUB_OUTPUT"
+            echo 'Capture scope: full'
           else
             echo 'mode=hero' >> "$GITHUB_OUTPUT"
+            echo 'Capture scope: hero'
           fi
       - uses: actions/setup-node@v4
         with:
