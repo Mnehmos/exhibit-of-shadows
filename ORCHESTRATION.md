@@ -42,7 +42,7 @@ Built: Gallery One complete (R1.A–E) with the in-sim stagehand console and mag
 2. Room modules own only their own groups (hall / aquarium / sails…); manifest owns lifecycle
 3. **Done when:** R1 renders exactly as v2 with zero behavior in R1 reading another room's internals, and adding a no-op `demo-room` to the manifest takes one line.
 
-### Phase 1 — Asset pipeline foundation (WS-C) — ◐ STARTED (v4: importmap + loader + manifest detection wired, awaiting asset pack)
+### Phase 1 — Asset pipeline foundation (WS-C) — ✅ DONE (v5.2: importmap + loader + 11 Quaternius CC0 GLBs + preview specimen renders/casts shadows; ATTRIBUTION.md live)
 1. Add `GLTFLoader` (+ `DRACOLoader` passthrough) via jsDelivr `three/addons/...`
 2. Download Quaternius **Animated Fish Pack** GLBs (poly.pizza) → `assets/fish/`
 3. Asset loader helper: cache, normalize scale to meters, enable `castShadow` on meshes; exposed to rooms as a `ctx` service

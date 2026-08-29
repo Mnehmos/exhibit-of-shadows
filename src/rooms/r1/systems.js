@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+import {R1} from './constants.js';
 import {state,onFrame,onResize,registerStatus} from '../../core/state.js';
 import {val,defineControl} from '../../core/controls.js';
 import {$} from '../../core/world.js';
@@ -8,7 +10,7 @@ import {feedExhibit} from './food.js';
 /* R1.E systems: shadow play (E05), feeding buttons (E06), control declarations
    (E07/E11), magic systems (E12–E15), breathing + resize + status hooks */
 export function initSystems(parts){
-  const {galleryAmbient,lamps,centralLight,orbMat,buildHabitat}=parts;
+  const {galleryAmbient,lamps,centralLight,orbMat,aquarium,buildHabitat}=parts;
   let centralBase=680;
 
   function applyGallery(){
@@ -54,5 +56,20 @@ export function initSystems(parts){
 
   centralBase=val('lightPower');centralLight.intensity=centralBase;centralLight.shadow.radius=1+val('shadowSoft')/12;applyGallery();
   syncFish();setGlow(val('glow'));setScale(val('fishScale'));
-  loadFishPack().then(()=>{/* Phase 2: swap GLB models in when a pack lands in assets/fish */});
+
+  /* Phase 1 preview specimen: first GLB of the pack orbits the core, casting real shadows.
+     Phase 2 replaces the whole procedural troupe with these + AnimationMixer. */
+  const {TANK_CENTER_Y}=R1;
+  loadFishPack().then(list=>{
+    if(!list.length)return;
+    const spec=list[0];
+    spec.traverse(o=>{if(o.isMesh)o.castShadow=true;});
+    spec.scale.setScalar(.55);
+    aquarium.add(spec);
+    onFrame((dt,t)=>{
+      const ang=t*.35,x=Math.sin(ang)*1.55,z=Math.cos(ang)*1.55;
+      spec.position.set(x,Math.sin(t*.6)*.35,z);
+      spec.lookAt(new THREE.Vector3(Math.sin(ang+.06)*1.55,TANK_CENTER_Y+spec.position.y,Math.cos(ang+.06)*1.55));
+    });
+  });
 }

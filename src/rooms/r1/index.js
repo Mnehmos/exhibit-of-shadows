@@ -30,7 +30,7 @@ export function mount(){
   const {buildHabitat}=initHabitat(habitat);
   initMinnows(fishGroup);
   initFood(foodGroup);
-  initSystems({galleryAmbient,lamps,centralLight:disp.centralLight,orbMat:disp.orbMat,fish,syncFish,buildHabitat});
+  initSystems({galleryAmbient,lamps,centralLight:disp.centralLight,orbMat:disp.orbMat,aquarium:disp.aquarium,fish,syncFish,buildHabitat});
 
   onFrame((dt,t)=>{
     disp.updateMotes(dt);
