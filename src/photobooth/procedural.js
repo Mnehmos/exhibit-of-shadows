@@ -22,8 +22,8 @@ function heroBody(){
     const tailRise=smoothstep(.02,.25,q),noseTaper=smoothstep(.78,1,q);
     const fullness=.62+.38*smoothstep(.12,.48,q);
     const belly=1+.10*Math.sin(q*Math.PI);
-    const ry=(.055+.43*tailRise)*fullness*(1-.18*noseTaper)*belly;
-    const rz=(.035+.245*tailRise)*(.93+.07*smoothstep(.25,.66,q))*(1-.14*noseTaper);
+    const ry=(.055+.43*tailRise)*fullness*(1-.56*noseTaper)*belly;
+    const rz=(.035+.245*tailRise)*(.93+.07*smoothstep(.25,.66,q))*(1-.50*noseTaper);
     for(let j=0;j<sides;j++){
       const a=j/sides*Math.PI*2,sy=Math.sin(a),sz=Math.cos(a);
       pos.push(x,sy*ry,sz*rz);
@@ -31,7 +31,7 @@ function heroBody(){
     }
   }
   const tailCenter=pos.length/3;pos.push(-1.02,0,0);colors.push(ORANGE.r,ORANGE.g,ORANGE.b);
-  const headCenter=pos.length/3;pos.push(1.02,0,0);colors.push(WHITE.r,WHITE.g,WHITE.b);
+  const headCenter=pos.length/3;pos.push(1.09,0,0);const nose=stripeColor(1.09,0);colors.push(nose.r,nose.g,nose.b);
   for(let i=0;i<rings-1;i++)for(let j=0;j<sides;j++){
     const n=(j+1)%sides,a=i*sides+j,b=i*sides+n,c=(i+1)*sides+j,d=(i+1)*sides+n;
     idx.push(a,c,b,b,c,d);
