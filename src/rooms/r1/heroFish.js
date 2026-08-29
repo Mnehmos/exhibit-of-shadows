@@ -12,7 +12,6 @@ const ORANGE=new THREE.Color(0xe84313);
 const WHITE=new THREE.Color(0xf0eadb);
 const BLACK=new THREE.Color(0x090b0c);
 const TMP_COLOR=new THREE.Color();
-const NEXT=new THREE.Vector3();
 
 function smoothstep(a,b,x){x=THREE.MathUtils.clamp((x-a)/(b-a),0,1);return x*x*(3-2*x);}
 
@@ -92,13 +91,13 @@ function shapeGeometry(points){
 
 function finMaterial(color,opacity=.9){
   return new THREE.MeshPhysicalMaterial({color,roughness:.27,metalness:0,clearcoat:.45,clearcoatRoughness:.2,
-    transparent:true,opacity,side:THREE.DoubleSide,depthWrite:true,alphaTest:.08});
+    transparent:true,opacity,side:THREE.DoubleSide,depthWrite:false,alphaTest:.04});
 }
 
 function layeredFin(points,position,rotation=new THREE.Euler()){
   const group=new THREE.Group();group.position.copy(position);group.rotation.copy(rotation);
-  const edge=new THREE.Mesh(shapeGeometry(points),finMaterial(0x080a0a,.94));edge.castShadow=true;group.add(edge);
-  const inner=new THREE.Mesh(shapeGeometry(points),finMaterial(0xd84917,.82));inner.scale.set(.82,.76,1);inner.position.z=.001;inner.castShadow=true;group.add(inner);
+  const edge=new THREE.Mesh(shapeGeometry(points),finMaterial(0x24100d,.84));edge.castShadow=true;group.add(edge);
+  const inner=new THREE.Mesh(shapeGeometry(points),finMaterial(0xe45a26,.78));inner.scale.set(.84,.78,1);inner.position.z=.001;inner.castShadow=true;group.add(inner);
   return group;
 }
 
@@ -138,15 +137,14 @@ function addWaterStudy(aquarium){
 
   const targetA=new THREE.Object3D(),targetB=new THREE.Object3D();
   targetA.position.set(.3,.25,0);targetB.position.set(-.4,.1,.2);aquarium.add(targetA,targetB);
-  const keyA=new THREE.SpotLight(0xc9f4ff,115,12,.68,.92,2);keyA.position.set(-2.5,4.15,1.7);keyA.target=targetA;
-  const keyB=new THREE.SpotLight(0x98d9d5,78,11,.72,.95,2);keyB.position.set(2.35,3.7,-1.5);keyB.target=targetB;
+  const keyA=new THREE.SpotLight(0xc9f4ff,42,12,.68,.92,2);keyA.position.set(-2.5,4.15,1.7);keyA.target=targetA;
+  const keyB=new THREE.SpotLight(0x98d9d5,26,11,.72,.95,2);keyB.position.set(2.35,3.7,-1.5);keyB.target=targetB;
   aquarium.add(keyA,keyB);
   return {surface,caustics,causticMap,keyA,keyB};
 }
 
 export function createHeroFish(aquarium){
   const swimmer=new THREE.Group(),visual=new THREE.Group();swimmer.add(visual);aquarium.add(swimmer);
-  visual.rotation.y=Math.PI/2;
 
   const body=makeBody();visual.add(body.mesh);
   const tail=layeredFin([[0,-.07],[-.34,-.36],[-.29,0],[-.34,.36],[0,.07]],new THREE.Vector3(-.86,0,0));visual.add(tail);
@@ -181,13 +179,13 @@ export function createHeroFish(aquarium){
   }
 
   function update(dt,t){
-    const pace=state.shadowPlay?.31:.22,a=t*pace;
-    const r=2.18;
-    swimmer.position.set(Math.sin(a)*r,.28+Math.sin(a*1.7)*.40,Math.cos(a)*r);
-    const na=a+.055;
-    NEXT.set(Math.sin(na)*r,.28+Math.sin(na*1.7)*.40,Math.cos(na)*r);
-    swimmer.lookAt(NEXT);
-    visual.rotation.set(0,Math.PI/2,-Math.cos(a*1.7)*.075);
+    /* Keep the study in the visitor-facing half of the big tank. A shallow
+       lateral patrol preserves a readable side silhouette from the gallery;
+       the turn happens naturally at zero speed at each end of the run. */
+    const pace=state.shadowPlay?.46:.34,a=t*pace;
+    swimmer.position.set(Math.sin(a)*1.18,.34+Math.sin(a*1.7)*.18,1.56+Math.cos(a*2)*.10);
+    const facing=Math.cos(a)>=0?0:Math.PI;
+    visual.rotation.set(0,facing,-Math.cos(a*1.7)*.055);
     deformBody(dt,state.shadowPlay?1.3:1);
     const glow=val('glow')/100;
     body.material.emissiveIntensity=glow*.42;
@@ -198,4 +196,3 @@ export function createHeroFish(aquarium){
 
   return {group:swimmer,update,material:body.material,label:'hero clownfish · physical study'};
 }
-

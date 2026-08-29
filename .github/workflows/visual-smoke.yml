@@ -21,7 +21,7 @@ jobs:
       - name: Start exhibit server
         run: python3 -m http.server 8137 > /tmp/exhibit-server.log 2>&1 &
       - name: Render scenarios
-        run: node tools/capture-exhibit.mjs --url=http://127.0.0.1:8137 --scenarios=default,shadowplay,magic --views=front,quarter,closeup --settle=2500 --out=evidence/ci-capture
+        run: node tools/capture-exhibit.mjs --url=http://127.0.0.1:8137 --scenarios=default,shadowplay --views=hero --settle=1800 --out=evidence/ci-capture
       - uses: actions/upload-artifact@v4
         if: always()
         with:
