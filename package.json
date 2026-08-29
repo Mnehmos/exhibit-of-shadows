@@ -1,1 +1,1 @@
-{"name":"exhibit-of-shadows","private":true,"type":"module","scripts":{"audit":"node tools/audit.mjs","capture":"node tools/capture-exhibit.mjs"},"devDependencies":{"playwright":"1.57.0"}}
+{"name":"exhibit-of-shadows","private":true,"type":"module","scripts":{"audit":"node tools/audit.mjs","capture":"node tools/capture-exhibit.mjs","capture:specimens":"node tools/capture-photo-booth.mjs"},"devDependencies":{"playwright":"1.57.0"}}
