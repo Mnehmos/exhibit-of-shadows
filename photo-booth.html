@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Specimen Photo Booth · The Exhibit of Shadows</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%A0%3C/text%3E%3C/svg%3E" />
+  <style>
+    :root{--ink:#f1eee6;--muted:#9fb0b2;--panel:#101719;--card:#172124;--line:#2d3c40;--accent:#d8c89d;--aqua:#79d7d0}
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;background:#080d0f;color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    body{padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
+    .shell{width:min(1180px,100%);margin:0 auto}
+    header{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin:5px 0 12px}
+    h1{margin:0;font:600 clamp(20px,4vw,34px)/1.05 Georgia,serif;letter-spacing:.015em}
+    .eyebrow{margin-bottom:5px;color:var(--aqua);font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
+    .back{color:var(--muted);font-size:13px;text-decoration:none}.back:hover{color:var(--ink)}
+    .stage{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:20px;background:#071114;box-shadow:0 22px 60px rgba(0,0,0,.35)}
+    canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;cursor:grab;touch-action:none}canvas:active{cursor:grabbing}
+    .badge{position:absolute;left:14px;top:14px;max-width:70%;padding:8px 11px;border:1px solid rgba(255,255,255,.10);border-radius:10px;background:rgba(5,10,12,.66);font-size:11px;line-height:1.4;backdrop-filter:blur(7px);pointer-events:none}
+    .badge strong{display:block;font-size:13px}.badge span{color:#bbcbcc}
+    .counter{position:absolute;right:14px;top:14px;padding:8px 11px;border-radius:10px;background:rgba(5,10,12,.66);color:var(--muted);font-size:12px;backdrop-filter:blur(7px)}
+    .controls{display:grid;grid-template-columns:minmax(220px,1.3fr) repeat(3,minmax(0,.6fr));gap:10px;margin-top:10px}
+    .control{min-width:0;padding:10px;border:1px solid var(--line);border-radius:13px;background:var(--card)}
+    label,.label{display:block;margin-bottom:6px;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.11em;text-transform:uppercase}
+    select,button{min-height:44px;border:1px solid var(--line);border-radius:10px;background:#111a1d;color:var(--ink);font:inherit;font-size:13px}
+    select{width:100%;padding:0 10px}
+    .pair,.views{display:flex;gap:6px}.pair button,.views button{flex:1;padding:0 9px}
+    button.active{border-color:var(--accent);background:#ded1ad;color:#191a19}
+    button.primary{border-color:#589f9c;background:#173436;color:#d9ffff}
+    .facts{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
+    .fact{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+    .fact span{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.09em}.fact strong{display:block;margin-top:3px;font-size:13px;font-variant-numeric:tabular-nums}
+    .note{margin:10px 2px 0;color:var(--muted);font-size:12px;line-height:1.5}
+    @media(max-width:780px){header{align-items:flex-start}.controls{grid-template-columns:1fr 1fr}.control:first-child{grid-column:1/-1}.facts{grid-template-columns:1fr 1fr}}
+    @media(max-width:440px){.controls{grid-template-columns:1fr}.control:first-child{grid-column:auto}.facts{grid-template-columns:1fr 1fr}.badge{max-width:76%}.counter{top:auto;bottom:10px}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div><div class="eyebrow">Silo Aquarium · archive tool</div><h1>Specimen Photo Booth</h1></div>
+      <a class="back" href="./">Return to Gallery One</a>
+    </header>
+    <section class="stage" aria-label="Isolated animated fish specimen viewer">
+      <div id="mount"></div>
+      <div class="badge"><strong id="specimenName">Loading specimens…</strong><span id="specimenMeta">Preparing a consistent studio stage</span></div>
+      <div class="counter" id="counter">— / —</div>
+    </section>
+    <section class="controls" aria-label="Photo booth controls">
+      <div class="control"><label for="specimenSelect">Specimen</label><select id="specimenSelect" disabled></select></div>
+      <div class="control"><span class="label">Browse</span><div class="pair"><button id="previousBtn" type="button">Previous</button><button id="nextBtn" type="button">Next</button></div></div>
+      <div class="control"><span class="label">Pose</span><div class="views"><button type="button" data-view="side" class="active">Side</button><button type="button" data-view="quarter">¾</button><button type="button" data-view="front">Front</button></div></div>
+      <div class="control"><span class="label">Capture</span><div class="pair"><button id="spinBtn" type="button" class="active">Turntable</button><button id="captureBtn" type="button" class="primary">Save PNG</button></div></div>
+    </section>
+    <section class="facts" aria-label="Model facts">
+      <div class="fact"><span>Source file</span><strong id="fileFact">—</strong></div>
+      <div class="fact"><span>Animations</span><strong id="animationFact">—</strong></div>
+      <div class="fact"><span>Meshes</span><strong id="meshFact">—</strong></div>
+      <div class="fact"><span>Native bounds</span><strong id="boundsFact">—</strong></div>
+    </section>
+    <p class="note">Drag the specimen to rotate it. Scroll or pinch to adjust framing. Every model is centered, aligned by its longest axis, and normalized to the same display length.</p>
+  </main>
+  <script type="importmap">
+  {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}
+  </script>
+  <script type="module" src="src/photobooth/main.js"></script>
+</body>
+</html>

@@ -17,9 +17,9 @@ The build plan: how work is sequenced, which workstream owns which catalog IDs, 
 | `README.md` | Run instructions + controls |
 | `ATTRIBUTION.md` | *(created when first non-CC0 asset lands)* credit list |
 
-## 2. Current state (v5)
+## 2. Current state (v7)
 
-Built: Gallery One complete (R1.A–E) with the in-sim stagehand console and magic systems (E12–E15). **Phase 0 done; ADR-010 adopted** — code lives in a modular file tree (`src/main.js` + `src/core/*` + `src/rooms/r1/*`), three.js pinned via importmap. **Phase 1 ◐** loader wired, awaiting asset pack. Public: https://github.com/Mnehmos/exhibit-of-shadows · https://mnehmos.github.io/exhibit-of-shadows/
+Built: Gallery One complete (R1.A–E) with the in-sim stagehand console and magic systems (E12–E15). **Phases 0–2 are done; Phase 3 has started** with a big-tank hero clownfish quality study, physical glass/water, animated procedural caustics, and GitHub Actions visual capture. Code lives in a modular file tree (`src/main.js` + `src/core/*` + `src/rooms/r1/*`), with three.js pinned via importmap. Public: https://github.com/Mnehmos/exhibit-of-shadows · https://mnehmos.github.io/exhibit-of-shadows/
 
 ## 3. Workstreams
 
@@ -27,8 +27,8 @@ Built: Gallery One complete (R1.A–E) with the in-sim stagehand console and mag
 |---|---|---|---|
 | **WS-A · Architecture** | Rooms, shells, walkable geometry | R1.A, R2.*, R3.P01 | R1 done, R2 next |
 | **WS-B · Livestock & behavior** | Fish, boids, phototaxis, feeding, new species AI | R1.D | v2 done, extends with R4/R5 |
-| **WS-C · Asset pipeline** | GLB loading, HDRI environment, materials, attribution | feeds A/B/D | not started |
-| **WS-D · Displays & lighting** | Shadow instruments, caustics, sails, per-room light rigs | R1.B/C, D-registry | v2 done, caustics pending |
+| **WS-C · Asset pipeline** | GLB loading, HDRI environment, materials, attribution | feeds A/B/D | GLB pipeline done; production PBR/HDRI pending |
+| **WS-D · Displays & lighting** | Shadow instruments, caustics, sails, per-room light rigs | R1.B/C, D-registry | procedural caustics + hero key rig live; production pass pending |
 | **WS-E · Systems & UX** | Controls, HUD, collision, perf, mobile | R1.E | v2 done, collision pending |
 | **WS-F · Docs** | Catalog changelog, attribution, README sync | all | continuous |
 | **WS-G · Content & exploration** | Clutter storytelling, POIs, radiant visitors — "show, don't tell" | R1-B05…B07, R1-C11, R1-D05, R1-E08 | planned (Phase 5) |
@@ -60,6 +60,7 @@ Custom centerpiece ecosystem: prey/predator roles on species; shark needs (patro
 - **Done when:** hunt scenario shows sharks chasing with energy draining and the hatchery holding the prey population at target — verified via evidence captures.
 
 ### Phase 3 — Lighting, Environment & materials (WS-C + D)
+**Status: ◐ STARTED (v7 quality study).** A repo-native hero fish now exercises high-density deformation, physical wet materials, micro-scale maps, corneas, transmissive glass/water, moving caustics, and a dedicated aquarium key rig. This validates the pipeline; it does not replace the production asset pass below.
 1. Poly Haven HDRI as `scene.environment` (glass/fish reflections)
 2. PBR floor/wall/plinth textures (Poly Haven or ambientCG CC0)
 3. Caustics: animated OGART caustic frames as low-intensity projected light-map on substrate + plinth

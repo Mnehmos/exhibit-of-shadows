@@ -3,7 +3,7 @@
    window.__aquarium API and writes PNG evidence + a JSON manifest.
    usage: node tools/capture-exhibit.mjs [--url=http://127.0.0.1:8137]
         [--scenarios=default,shadowplay,feeding,magic]
-        [--views=front,quarter,closeup,overhead,wide]
+        [--views=front,quarter,hero,closeup,overhead,wide]
         [--out=evidence/captures/exhibit-review] */
 import {chromium} from 'playwright';
 import {mkdir} from 'node:fs/promises';
@@ -46,6 +46,7 @@ const browser=await chromium.launch({
 
 try{
   const page=await browser.newPage({viewport:{width:1280,height:800},deviceScaleFactor:1});
+  page.setDefaultTimeout(90000);
   page.on('pageerror',e=>console.error('PAGEERROR',e.message));
   page.on('requestfailed',r=>console.error('REQFAIL',r.url(),r.failure()?.errorText));
   const started=performance.now();
@@ -67,7 +68,9 @@ try{
       await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
       const stats=await page.evaluate(()=>window.__aquarium.stats());
       const file=`${stamp}-${scenario}-${view}.png`;
-      await page.screenshot({path:resolve(outputDirectory,file),animations:'disabled'});
+      /* Capturing only the WebGL surface is both the useful regression image
+         and materially cheaper under SwiftShader than freezing the full HUD. */
+      await page.locator('#mount canvas').screenshot({path:resolve(outputDirectory,file),animations:'allow',timeout:90000});
       captures.push({scenario,view,file,stats});
     }
   }

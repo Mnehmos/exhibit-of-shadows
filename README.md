@@ -2,6 +2,8 @@
 
 **Live exhibit:** https://mnehmos.github.io/exhibit-of-shadows/
 
+**Specimen photo booth:** https://mnehmos.github.io/exhibit-of-shadows/photo-booth.html
+
 An online aquarium: a walkable, museum-scale cylindrical tank lit by a single shadow-casting light at its core — fish, plants, and visitors projected as silhouettes onto hanging sails and the hall walls. Bend its physics from the stagehand console: gravity, hall time, bioluminescence, minnow scale.
 
 Standalone three.js (MIT, loaded from CDN at runtime) — no build step, no dependencies on your machine beyond a browser.
@@ -35,6 +37,12 @@ npx serve .
 - **Shadow play** dims the gallery, makes the core breathe, and winds the school into a vortex.
 - Feed the exhibit to make fish rush toward falling food.
 - Sliders control fish activity, schooling, light pull (phototaxis), plant density, central light, shadow softness, gallery light, and walk speed.
+
+## Specimen photo booth
+
+`photo-booth.html` isolates all 13 project fish entries on one controlled studio stage: 11 bundled GLBs, the procedural hero clownfish, and the procedural minnow archive specimen. It automatically centers, horizontally aligns, and normalizes every model for comparison; plays available animation; provides side, three-quarter, and front views; supports drag/zoom and turntable inspection; and can save the current frame as a PNG.
+
+Run `npm run capture:specimens` while the local server is on port 8137 to generate a side-profile image for every manifest entry. The same capture sweep runs in GitHub Actions after each deployment.
 
 ## Notes
 

@@ -7,8 +7,11 @@ import {rnd,gradientTexture} from '../../core/utils.js';
 export function buildDisplay(root){
   const {TANK_R,TANK_H,TANK_CENTER_Y,LIGHT_COLUMN_R,HALL_R}=R1;
   const aquarium=new THREE.Group();aquarium.position.y=TANK_CENTER_Y;root.add(aquarium);
-  const glassMat=new THREE.MeshPhysicalMaterial({color:0x75a7a3,transparent:true,opacity:.11,transmission:.90,roughness:.035,depthWrite:false,side:THREE.DoubleSide});
-  const waterMat=new THREE.MeshPhysicalMaterial({color:0x234f54,transparent:true,opacity:.15,transmission:.78,roughness:.09,depthWrite:false,side:THREE.DoubleSide});
+  const glassMat=new THREE.MeshPhysicalMaterial({color:0xe1ffff,transparent:true,opacity:1,transmission:.96,thickness:.075,ior:1.50,roughness:.045,attenuationColor:0xb9dfdc,attenuationDistance:18,depthWrite:false,side:THREE.DoubleSide});
+  /* Back-face volume avoids double-blending the old teal cylinder. Distance
+     attenuation now supplies the water color while the hero-study surface,
+     caustics and particles provide the perceptual underwater cues. */
+  const waterMat=new THREE.MeshPhysicalMaterial({color:0xd9fffb,transparent:true,opacity:1,transmission:.94,thickness:TANK_R*1.8,ior:1.333,roughness:.12,attenuationColor:0x28787b,attenuationDistance:7.5,depthWrite:false,side:THREE.BackSide});
   const glass=new THREE.Mesh(new THREE.CylinderGeometry(TANK_R,TANK_R,TANK_H,64,1,true),glassMat);
   const water=new THREE.Mesh(new THREE.CylinderGeometry(TANK_R*.96,TANK_R*.96,TANK_H*.94,64,1,false),waterMat);
   aquarium.add(glass,water);
