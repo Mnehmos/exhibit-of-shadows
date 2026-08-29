@@ -27,7 +27,7 @@ function configureBodyPattern(material){
     shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vBodyPosition;').replace('#include <color_fragment>',`#include <color_fragment>
       float sy=clamp(vBodyPosition.y/.62,-1.0,1.0);
       float arches=1.0-sy*sy;
-      vec3 orange=vec3(.949,.353,.125),ivory=vec3(1.0,.961,.851),ink=vec3(.09,.075,.094);
+      vec3 orange=vec3(.888,.102,.014),ivory=vec3(1.0,.913,.694),ink=vec3(.0086,.0066,.0091);
       vec3 pattern=orange;
       float distance=abs(vBodyPosition.x-(-.71+.018*sy));
       float aa=max(fwidth(distance)*1.35,.0015);
@@ -107,9 +107,9 @@ export function createHeroFishSpecimen(){
   const tail=fin([[.03,-.15],[-.09,-.23],[-.28,-.33],[-.46,-.32],[-.55,-.21],[-.58,0],[-.55,.21],[-.46,.32],[-.28,.33],[-.09,.23],[.03,.15]],new THREE.Vector3(-.97,0,0),new THREE.Euler(),.88);visual.add(tail);
   const dorsal=fin([[-.64,0],[-.57,.18],[-.40,.32],[-.16,.39],[.10,.37],[.32,.28],[.50,.15],[.57,.025],[.47,0]],new THREE.Vector3(-.10,.40,0),new THREE.Euler(),.88);visual.add(dorsal);
   const anal=fin([[-.52,0],[-.44,-.15],[-.27,-.29],[-.02,-.34],[.22,-.30],[.42,-.18],[.52,-.035],[.43,0]],new THREE.Vector3(-.17,-.43,0),new THREE.Euler(),.88);visual.add(anal);
-  const pectoralPoints=[[.07,.08],[-.06,.10],[-.21,.03],[-.35,-.10],[-.38,-.24],[-.28,-.38],[-.10,-.43],[.06,-.32],[.16,-.14],[.15,0]];
-  const leftFin=fin(pectoralPoints,new THREE.Vector3(.30,.10,.355),new THREE.Euler(.08,-.03,.04),.87);
-  const rightFin=fin(pectoralPoints,new THREE.Vector3(.30,.10,-.325),new THREE.Euler(-.08,.03,.04),.87);
+  const pectoralPoints=[[.04,.05],[-.05,.06],[-.16,.02],[-.25,-.07],[-.28,-.17],[-.21,-.28],[-.08,-.32],[.04,-.24],[.12,-.10],[.11,0]];
+  const leftFin=fin(pectoralPoints,new THREE.Vector3(.28,.09,.350),new THREE.Euler(.08,-.03,.04),.86);
+  const rightFin=fin(pectoralPoints,new THREE.Vector3(.28,.09,-.325),new THREE.Euler(-.08,.03,.04),.86);
   const pelvicPoints=[[-.14,0],[-.08,-.16],[.03,-.24],[.17,-.17],[.22,-.03],[.15,0]];
   const leftPelvic=fin(pelvicPoints,new THREE.Vector3(.18,-.44,.11),new THREE.Euler(.18,0,0),.84);
   const rightPelvic=fin(pelvicPoints,new THREE.Vector3(.18,-.44,-.11),new THREE.Euler(-.18,0,0),.84);
