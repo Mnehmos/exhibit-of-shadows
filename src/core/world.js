@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {resizeHooks} from './state.js';
 
 /* world: DOM anchors + scene/camera/renderer. The importmap in index.html is
@@ -24,6 +25,12 @@ renderer.domElement.style.height='auto';
 renderer.domElement.style.aspectRatio='16/9';
 export const lookEl=renderer.domElement;
 mount.appendChild(lookEl);
+
+/* PBR environment: subtle procedural room reflections for glass, fish, sails */
+const pmrem=new THREE.PMREMGenerator(renderer);
+scene.environment=pmrem.fromScene(new RoomEnvironment(),.04).texture;
+scene.environmentIntensity=.25;
+pmrem.dispose();
 
 export function resize(){
   const r=mount.getBoundingClientRect(),w=Math.max(320,r.width),h=w*9/16;

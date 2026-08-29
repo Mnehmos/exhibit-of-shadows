@@ -18,9 +18,14 @@ export function buildFixtures(root){
   const lamps=[];
   for(let i=0;i<8;i++){
     const a=i/8*Math.PI*2;
-    const lamp=new THREE.PointLight(0xffd9aa,.55,4.5,2);
+    const lamp=new THREE.PointLight(0xffd9aa,.45,4.5,2);
     lamp.position.set(Math.sin(a)*(HALL_R-.8),7.5,Math.cos(a)*(HALL_R-.8));root.add(lamp);lamps.push(lamp);
   }
+
+  /* R1.B09 curator key light — soft fill from the entrance side so specimen
+     flanks read as living creatures, not black cutouts. Never casts shadows. */
+  const keyLight=new THREE.PointLight(0xfff4e0,.5,30,1.8);
+  keyLight.position.set(0,10.5,6.5);root.add(keyLight);
 
   /* sheer cloth receives silhouettes, lets the central light pass (ADR-004) */
   const sails=new THREE.Group();root.add(sails);

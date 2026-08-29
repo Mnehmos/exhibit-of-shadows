@@ -16,7 +16,7 @@ export function initSystems(parts){
   function applyGallery(){
     const g=val('galleryLight');
     galleryAmbient.intensity=(.03+g/100*.70)*(state.shadowPlay?.18:1);
-    for(const l of lamps)l.intensity=state.shadowPlay?.07:.55;
+    for(const l of lamps)l.intensity=state.shadowPlay?.07:.45;
   }
   function setShadowPlay(on){
     state.shadowPlay=on;state.playT=0;
@@ -52,7 +52,6 @@ export function initSystems(parts){
     }
   });
   onResize(w=>{const s=w<620?512:1024;if(centralLight.shadow.mapSize.x!==s){centralLight.shadow.mapSize.set(s,s);if(centralLight.shadow.map){centralLight.shadow.map.dispose();centralLight.shadow.map=null;}}});
-  registerStatus(()=>'assets: '+assets.status);
 
   centralBase=val('lightPower');centralLight.intensity=centralBase;centralLight.shadow.radius=1+val('shadowSoft')/12;applyGallery();
   syncFish();setGlow(val('glow'));setScale(val('fishScale'));
@@ -62,14 +61,33 @@ export function initSystems(parts){
   const {TANK_CENTER_Y}=R1;
   loadFishPack().then(list=>{
     if(!list.length)return;
-    const spec=list[0];
-    spec.traverse(o=>{if(o.isMesh)o.castShadow=true;});
-    spec.scale.setScalar(.55);
-    aquarium.add(spec);
+    const {scene:spec,animations}=list[0];
+    /* normalize: Quaternius exports vary wildly in author scale */
+    const box=new THREE.Box3().setFromObject(spec);
+    const size=box.getSize(new THREE.Vector3());
+    spec.scale.setScalar(.85/Math.max(size.x,size.y,size.z,1e-6));
+    const center=box.getCenter(new THREE.Vector3()).multiplyScalar(spec.scale.x);
+    spec.position.set(-center.x,-center.y,-center.z);
+    const wrap=new THREE.Group();wrap.add(spec);
+    wrap.traverse(o=>{
+      if(!o.isMesh)return;
+      o.castShadow=true;
+      const mats=Array.isArray(o.material)?o.material:[o.material];
+      for(const m of mats){
+        if(!m.emissive)continue;
+        if(m.emissive.getHex()===0&&m.color)m.emissive.copy(m.color);
+        m.emissiveIntensity=Math.max(m.emissiveIntensity,.22);
+      }
+    });
+    aquarium.add(wrap);
+    let mixer=null;
+    const clip=animations.find(a=>/swim/i.test(a.name))||animations[0]||null;
+    if(clip){mixer=new THREE.AnimationMixer(spec);mixer.clipAction(clip).play();}
     onFrame((dt,t)=>{
+      if(mixer)mixer.update(dt);
       const ang=t*.35,x=Math.sin(ang)*1.55,z=Math.cos(ang)*1.55;
-      spec.position.set(x,Math.sin(t*.6)*.35,z);
-      spec.lookAt(new THREE.Vector3(Math.sin(ang+.06)*1.55,TANK_CENTER_Y+spec.position.y,Math.cos(ang+.06)*1.55));
+      wrap.position.set(x,Math.sin(t*.6)*.3,z);
+      wrap.lookAt(new THREE.Vector3(Math.sin(ang+.06)*1.55,TANK_CENTER_Y+wrap.position.y,Math.cos(ang+.06)*1.55));
     });
   });
 }

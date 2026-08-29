@@ -28,6 +28,7 @@ The main hall: a cylinder R 10.8 m × H 12.8 m with the centerpiece tank at its 
 | R1-B03 | Ambient hemisphere light | 1 | Sky `#dbe3df` / ground `#252727`, slider-controlled | *galleryAmbient* |
 | R1-B04 | Shadow sail (display surface D1–D8) | 8 | Sheer cloth plane 2.55 × 5.50, cream `#e9e2d0`, center y 4.55; top rod 2.75 + suspension wire; ring R 8.55, every 45°, tilted −0.10 toward core; primary fish-shadow catchers | *sails* |
 | R1-B08 | Stagehand console booth | 1 | Podium + glowing screen + accent strip; in the sail gap at 45° facing the tank through open hall; interact R 2.6 m | *consoleGroup* |
+| R1-B09 | Curator key light | 1 | Soft warm fill `#fff4e0` I .5 at (0, 10.5, 6.5); no shadow casting; keeps specimen flanks readable | *keyLight* |
 
 ### R1.C — The Display: centerpiece tank
 | ID | Piece | Qty | Spec / position | Code |
@@ -120,6 +121,7 @@ Near-black room, drifting bell meshes, single upward light; the purest shadow ro
 | Manifest + loop + HUD | `src/main.js` |
 
 ## Changelog
+- **v5.3 — specimen quality + lighting pass**: preview specimen normalized/centered, plays its swim clip via AnimationMixer, emissive material lift (no black-blob); PMREM `RoomEnvironment` reflections at 25% intensity; lamps rebalanced .45; curator key light added (B09); duplicate HUD assets status removed.
 - **v5.2 — Phase 1 complete**: 11 Quaternius CC0 GLB fish downloaded into `assets/fish/` (D05-adjacent, see ATTRIBUTION.md); loader renders a preview specimen orbiting the core with real shadows; manifest is the drop-in point for more models; habitat import fix (K-list audit catch).
 - **v5.1 — hotfix**: `syncFish()` restored to init (v5 split dropped it — troupe never spawned); `assets/fish/manifest.json` placeholder kills the console 404; playtest step 1 asserts the minnow count.
 - **v5 — modular file tree (ADR-010)**: `index.html` is now a shell; code split into `src/main.js`, `src/core/*` (9 services), `src/rooms/r1/*` (10 parts); audit walks the tree; hall time wired into the loop (E13 actually live); deployed Pages unchanged.
