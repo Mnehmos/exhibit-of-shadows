@@ -2,7 +2,7 @@
 
 Live state. Update at the end of every session.
 
-**Version:** v9 — THE MOON DUNE · **Phase 0 ✅ · Phase 1 ✅ · Phase 2 ✅ · Phase 2.5 ✅ ecosystem · Phase 3 ◐ (caustics landed; HDRI/textures open) · Phases 4–8 open**
+**Version:** v9.6 — THE MOON DUNE · **Phase 0 ✅ · Phase 1 ✅ · Phase 2 ✅ · Phase 2.5 ✅ ecosystem · Phase 3 ◐ (caustics landed; HDRI/textures open) · Phases 4–8 open**
 **Run:** `python -m http.server 8137` in this folder → http://localhost:8137
 **Deploy:** public repo + GitHub Pages — https://mnehmos.github.io/exhibit-of-shadows/ (branch `main`, path `/`; Pages rebuilds on every push)
 **Check:** `node tools/audit.mjs` → AUDIT PASS required before closing a session.

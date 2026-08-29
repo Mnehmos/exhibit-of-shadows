@@ -5,37 +5,27 @@ import {val,defineControl} from '../../core/controls.js';
 import {clamp,rnd} from '../../core/utils.js';
 import {SEA_GLASS} from './artDirection.js';
 import {foods,nearestFood,removeFood} from './food.js';
-import {fish,predators as sharkList} from './troupe.js';
+import {fish,predators as getSharks} from './troupe.js';
 
-/* ═══ MOON MINNOWS — modeled on real minnow behaviour (v9.5) ═══
-   No anchors, no shell, no leader. Emergent schooling from local rules:
-
-   · three interaction zones per pair — repulsion / alignment / attraction
-   · every fish has a boldness personality (skittish ↔ bold):
-       skittish fish dive into the ball first; bold fish forage at the edge
-       and are the last to panic
-   · each fish remembers two shoalmates and biases toward them —
-       "some follow, some stay"
-   · panic is contagious: darts propagate through the school as a wave,
-       filtered by each fish's boldness and reaction
-   · hunger drives foraging: hungry fish leave cover to nibble pellets
-   · C-start darts: speed burst + tail flash, random when calm,
-       threat-driven when hunted
-
+/* ═══ MOON MINNOWS — tendencies, not rules (v9.6) ═══
+   Couzin-style zones scaled to fish size:
+     repulsion .19 · alignment .52 · attraction 1.15
+   Every weight carries per-fish variance (space/social/bold/dart/depth).
+   A gentle home pull keeps ONE school; a tangential term makes it swirl.
    Eaten minnows re-hatch at the plant bed (grow-in). */
 
 const LEN=.38;
-defineControl({id:'ballSize',label:'Moon minnows',group:'Ecosystem',min:24,max:120,step:2,value:88,fmt:v=>String(v)});
+const DART_TIME=.32;
+const MR=.055;
+let ballClock=0;
+defineControl({id:'ballSize',label:'Moon minnows',group:'Ecosystem',min:32,max:120,step:2,value:88,fmt:v=>String(v)});
 export const minnows=[];
 let fishGroup=null;
 let pendingHatch=0;
-const A=new THREE.Vector3(),B=new THREE.Vector3(),C=new THREE.Vector3();
+const A=new THREE.Vector3(),B=new THREE.Vector3(),C=new THREE.Vector3(),D=new THREE.Vector3();
 
-/* tuning — real-minnow-inspired */
-const Z_REP=.16, Z_ALN=.44, Z_ATT=1.0;
-const CONTAGION_R=.6, PANIC_TRIG=.55, PANIC_DECAY=.85;
-const DART_TIME=.32, DART_SPEED=1.9;
-const MR=.06;                     /* minnow body radius (hard separation) */
+/* the school's own drifting center — never pinned to the light */
+const ballCenter=new THREE.Vector3(2.1,.3,1.4);
 
 function buildMesh(){
   const group=new THREE.Group(),rings=22,sides=10,pos=[],idx=[],u=[];
@@ -56,13 +46,17 @@ function buildMesh(){
 
 function spawn(at,grow){
   const m=buildMesh();
-  const bold=.15+Math.random()*.8;
-  const f={...m,bold,panic:0,hunger:rnd(.2,.8),companions:[],dartT:0,
+  const f={...m,bold:rnd(.15,.95),
+    space:.7+rnd(0,.7),
+    social:.7+rnd(0,.6),
+    dart:rnd(.5,1.3),
+    depth:rnd(-.75,.75),
+    panic:0,hunger:rnd(.2,.8),dartT:0,
     dartDir:new THREE.Vector3(rnd(-1,1),rnd(-.3,.3),rnd(-1,1)).normalize(),
-    pos:at?at.clone():randomPoint(),vel:new THREE.Vector3(rnd(-.4,.4),rnd(-.15,.15),rnd(-.4,.4)),
+    companions:[],
+    pos:at?at.clone():ballPoint(),vel:new THREE.Vector3(rnd(-.5,.5),rnd(-.2,.2),rnd(-.5,.5)),
     acc:new THREE.Vector3(),noise:new THREE.Vector3(),phase:rnd(0,6.28),
     spawnGrow:grow?1:0,body:m.body};
-  /* two shoalmates — "some follow" */
   if(minnows.length){
     f.companions=[minnows[Math.floor(Math.random()*minnows.length)],minnows[Math.floor(Math.random()*minnows.length)]];
   }
@@ -70,15 +64,14 @@ function spawn(at,grow){
   fishGroup.add(f.group);minnows.push(f);
   return f;
 }
-function randomPoint(){const {TANK_R,TANK_H}=R1;const a=rnd(0,6.28),r=rnd(1.4,TANK_R-.7);return new THREE.Vector3(Math.sin(a)*r,rnd(-TANK_H*.36,TANK_H*.36),Math.cos(a)*r);}
+function ballPoint(){const a=rnd(0,6.28);return new THREE.Vector3(ballCenter.x+Math.sin(a)*rnd(.2,1.2),ballCenter.y+rnd(-.8,.8),ballCenter.z+Math.cos(a)*rnd(.2,1.2));}
 
 export function initMoonMinnows(group){
   fishGroup=group;
-  for(let i=0;i<88;i++)spawn(null,false);
-  /* companion hookup pass */
+  for(let i=0;i<Math.round(val('ballSize'));i++)spawn(null,false);
   for(const f of minnows){
     const others=minnows.filter(o=>o!==f);
-    f.companions=[others[Math.floor(Math.random()*others.length)],others[Math.floor(Math.random()*others.length)]];
+    if(others.length>1)f.companions=[others[Math.floor(Math.random()*others.length)],others[Math.floor(Math.random()*others.length)]];
   }
 }
 export function setBallTarget(){syncBall();}
@@ -86,10 +79,7 @@ export function setBallTarget(){syncBall();}
 export function syncBall(){
   const target=Math.round(val('ballSize'));
   let guard=target*2+4;
-  while(minnows.length<target&&guard-->0){
-    const f=spawn(new THREE.Vector3(Math.sin(minnows.length)*1.6,-.5,Math.cos(minnows.length)*1.6),true);
-    if(f.spawnGrow)f.group.scale.setScalar(.15);
-  }
+  while(minnows.length<target&&guard-->0)spawn(ballPoint(),true);
   while(minnows.length>target){
     const m=minnows.pop();
     fishGroup.remove(m.group);
@@ -108,123 +98,161 @@ export function despawnMinnow(m){
 }
 
 export function updateMoonMinnows(dt,t){
+  /* hatchery: eaten minnows regrow at the plant bed */
   const target=Math.round(val('ballSize'));
   while(pendingHatch>0&&minnows.length<target){
     const a=Math.random()*6.28;
-    const f=spawn(new THREE.Vector3(Math.sin(a)*1.3,-R1.TANK_H*.32,Math.cos(a)*1.3),true);
+    const f=spawn(new THREE.Vector3(Math.sin(a)*2.2,-R1.TANK_H*.32,Math.cos(a)*2.2),true);
     f.hunger=rnd(.5,1);
   }
   if(pendingHatch>0&&minnows.length>=target)pendingHatch=0;
 
-  const sharks=sharkList();
-  const {TANK_R,TANK_H,LIGHT_COLUMN_R}=R1;
-  const glow=state.shadowPlay?1.6:.45;
-  const centroid=new THREE.Vector3();
-  for(const f of minnows)centroid.add(f.pos);
-  if(minnows.length)centroid.divideScalar(minnows.length);
+  /* the school's center wanders its own slow path — never onto the light */
+  ballClock+=dt;
+  ballCenter.set(
+    2.1+Math.sin(ballClock*.05)*1.1+Math.sin(ballClock*.023)*.5,
+    Math.sin(ballClock*.07)*.55,
+    Math.cos(ballClock*.041)*1.5+Math.sin(ballClock*.017)*.8
+  );
+  const bcl=ballCenter.length();
+  if(bcl<1.9)ballCenter.multiplyScalar(1.9/bcl);
 
-  /* behaviour pass */
-  for(const f of minnows){
-    f.acc.set(0,0,0);
-    f.panic=Math.max(0,f.panic-dt*PANIC_DECAY);
-    f.hunger=Math.min(1,f.hunger+dt*.06*(1.3-f.bold));
+  const sharks=getSharks();
+  const {TANK_R,TANK_H}=R1;
+  const glow=state.shadowPlay?1.55:.45;
 
-    /* shark terror — skittish fish spike sooner and harder */
-    let nearShark=null,sd=Infinity;
-    for(const p of sharks){const d=f.pos.distanceToSquared(p.pos);if(d<sd){sd=d;var sp=p;}}
-    if(sp&&sd<1.6*1.6){
-      const d=Math.sqrt(sd);
-      f.panic=Math.min(1,f.panic+dt*6*(1-d/1.6)*(1.25-f.bold*.8));
-      f.threat=f.threat||new THREE.Vector3();
-      f.threat.copy(f.pos).sub(sp.pos).normalize();
-    }
+  /* zero the force accumulators */
+  for(const f of minnows)f.acc.set(0,0,0);
 
-    /* random startle — they live their own life */
-    if(f.panic<.2&&Math.random()<dt*.03*(1.3-f.bold)){
-      f.panic=Math.min(1,.5+Math.random()*.4);
-      f.dartT=DART_TIME;
-      f.dartDir.set(rnd(-1,1),rnd(-.3,.3),rnd(-1,1)).normalize();
-    }
-
-    /* C-start dart */
-    if(f.dartT>0){
-      f.dartT-=dt;
-      f.acc.addScaledVector(f.dartDir,7*(f.dartT/DART_TIME+.3));
-      f.phase+=dt*22;                       /* tail flash */
-      if(f.panic>.5)f.acc.addScaledVector(C.subVectors(centroid,f.pos).normalize(),1.1*f.panic*(1.15-f.bold*.6));
-    }
-
-    /* foraging: hungry + calm → seek pellets; bold fish range farther */
-    if(f.panic<.25&&f.hunger>.35){
-      const food=nearestFood({pos:f.pos});
-      if(food){
-        B.subVectors(food.pos,f.pos);
-        const d=B.length();
-        if(d<2.2)f.acc.add(B.normalize().multiplyScalar(.9*(.6+f.bold*.7)));
-        if(d<.09){removeFood(food);f.hunger*=.3;}
-      }
-    }
-
-    /* calm wander */
-    if(f.panic<.3){
-      f.noise.x=THREE.MathUtils.lerp(f.noise.x,rnd(-1,1),dt*1.4);
-      f.acc.addScaledVector(f.noise,.35*(.5+f.bold));
-    }
-  }
-
-  /* pairwise zones: repulsion / alignment / attraction / panic contagion */
+  /* ═ pairwise zones (scaled to fish size) ═ */
   for(let i=0;i<minnows.length;i++)for(let j=i+1;j<minnows.length;j++){
     const a=minnows[i],b=minnows[j];
     const dx=b.pos.x-a.pos.x,dy=b.pos.y-a.pos.y,dz=b.pos.z-a.pos.z;
     const d2=dx*dx+dy*dy+dz*dz;
-    if(d2>1.2*1.2)continue;
+    if(d2>1.25*1.25)continue;
     const d=Math.sqrt(d2)||.001,nx=dx/d,ny=dy/d,nz=dz/d;
 
-    if(d<Z_REP){
-      const k=(Z_REP-d)/Z_REP*2.4;
+    if(d<.19){                                        /* repulsion */
+      const k=(.19-d)/.19*(1.1*a.space+.6);
       a.acc.x-=nx*k;a.acc.y-=ny*k;a.acc.z-=nz*k;
       b.acc.x+=nx*k;b.acc.y+=ny*k;b.acc.z+=nz*k;
     }
-    if(d<Z_ALN){
-      const w=(1-d/Z_ALN)*.9;
+    if(d<.52){                                        /* alignment */
+      const w=(1-d/.52)*(a.social+b.social)*.45;
       a.acc.x+=(b.vel.x-a.vel.x)*w;a.acc.y+=(b.vel.y-a.vel.y)*w;a.acc.z+=(b.vel.z-a.vel.z)*w;
       b.acc.x+=(a.vel.x-b.vel.x)*w;b.acc.y+=(a.vel.y-b.vel.y)*w;b.acc.z+=(a.vel.z-b.vel.z)*w;
     }
-    if(d<Z_ATT){
+    if(d<1.15){                                       /* attraction (shoalmates pull hardest) */
       const companion=a.companions.includes(b)||b.companions.includes(a);
-      const w=((companion?1.5:.55))*(1-d/Z_ATT);
+      const w=(companion?1.4:.55)*(1-d/1.15)*(a.social+b.social)*.4;
       a.acc.x+=nx*w;a.acc.y+=ny*w;a.acc.z+=nz*w;
       b.acc.x-=nx*w;b.acc.y-=ny*w;b.acc.z-=nz*w;
     }
     /* panic contagion — the wave */
     const hi=a.panic>b.panic?a:b,lo=hi===a?b:a;
-    if(hi.panic>PANIC_TRIG&&d<CONTAGION_R)
-      lo.panic=Math.min(1,lo.panic+dt*7*hi.panic*(1-d/CONTAGION_R)*(1.2-lo.bold*.6));
+    if(hi.panic>.5&&d<.65)
+      lo.panic=Math.min(1,lo.panic+dt*7*hi.panic*(1-d/.65)*(1.2-lo.bold*.6));
   }
 
-  /* compose + integrate */
-  const inner=1.25;
+  /* ═ individual tendencies ═ */
+  const centroid=new THREE.Vector3();
+  for(const f of minnows)centroid.add(f.pos);
+  if(minnows.length)centroid.divideScalar(minnows.length);
+
   for(const f of minnows){
-    /* panicky fish compress toward the ball's own centroid; bold hold ground */
-    if(f.panic>.3)f.acc.addScaledVector(C.subVectors(centroid,f.pos),1.15*f.panic*(1.15-f.bold*.6));
+    f.panic=Math.max(0,f.panic-dt*.9);
+    f.hunger=Math.min(1,f.hunger+dt*.06*(1.3-f.bold));
+    if(f.dartT>0)f.dartT-=dt;
+
+    /* home: gentle pull keeps one school */
+    B.subVectors(ballCenter,f.pos);
+    f.acc.addScaledVector(B,.5);
+
+    /* moonstone aversion — soft, personal */
+    const cd=f.pos.length();
+    const avR=.95+f.space*.4;
+    if(cd<avR&&cd>.001){
+      C.set(-f.pos.x/cd,-f.pos.y/cd,-f.pos.z/cd);
+      f.acc.addScaledVector(C,2.1*(avR-cd)/avR);
+    }
+
+    /* depth band preference */
+    const prefY=f.depth*2.1;
+    f.acc.y+=(prefY-f.pos.y)*.22;
+
+    /* sharks — fear raises panic, close shark forces a dart */
+    let fleeing=false;
+    for(const p of sharks){
+      B.subVectors(f.pos,p.pos);
+      const d=B.length();
+      if(d<1.7&&d>.001){
+        const k=(1.7-d)/1.7;
+        f.acc.addScaledVector(B.normalize(),2.7*k);
+        f.panic=Math.min(1,f.panic+dt*5*k*(1.25-f.bold*.8));
+        if(k>.55){f.dartT=Math.max(f.dartT,.26);f.dartDir.copy(B.normalize());fleeing=true;}
+      }
+    }
+
+    /* random startle — bold fish shrug it off */
+    if(f.panic<.2&&Math.random()<dt*.028*(1.3-f.bold)){
+      f.panic=Math.min(1,.5+Math.random()*.4);
+      f.dartT=DART_TIME*(.6+f.dart*.6);
+      f.dartDir.set(rnd(-1,1),rnd(-.3,.3),rnd(-1,1)).normalize();
+    }
+
+    /* pellets — hunger pulls */
+    if(f.panic<.3&&f.hunger>.35){
+      const food=nearestFood({pos:f.pos});
+      if(food){
+        B.subVectors(food.pos,f.pos);
+        const d=B.length();
+        if(d<2.4)f.acc.add(B.normalize().multiplyScalar(.8*(.55+f.bold*.65)));
+        if(d<.09){removeFood(food);f.hunger*=.3;}
+      }
+    }
+
+    /* calm wander */
+    if(f.panic<.35){
+      f.noise.x=THREE.MathUtils.lerp(f.noise.x,rnd(-1,1),dt*1.3);
+      f.acc.addScaledVector(f.noise,.4*(.45+f.bold*.55));
+    }
+
+    /* panic compress: toward the school's own centroid, skittish hardest */
+    if(f.panic>.35)f.acc.addScaledVector(C.subVectors(centroid,f.pos),1.1*f.panic*(1.15-f.bold*.6));
+
+    /* glass aversion */
+    const radC=Math.hypot(f.pos.x,f.pos.z),glassR=TANK_R-.5;
+    if(radC>glassR-.35){
+      const k=(radC-(glassR-.35))/.35;
+      f.acc.x-=f.pos.x/radC*2.4*k;f.acc.z-=f.pos.z/radC*2.4*k;
+    }
+  }
+
+  /* ═ integrate: forward-only swimming, turn-rate limited ═ */
+  for(const f of minnows){
     f.vel.addScaledVector(f.acc,dt);
-    let speed=.3+.25*f.bold+.12*f.hunger;
-    if(f.panic>.4)speed=Math.max(speed,1.05+.5*f.panic);
-    if(f.dartT>0)speed=DART_SPEED;
-    if(f.vel.length()>speed)f.vel.setLength(speed);
-    if(f.vel.length()<.16&&f.vel.length()>.001)f.vel.setLength(.16);
+    const sp=f.vel.length();
+    const minS=.3,maxS=f.dartT>0?1.9:(f.panic>.5?1.45:.9);
+    let desired=f.vel;
+    if(sp<minS)desired=f.vel.clone().setLength(minS);
+    if(sp>maxS)desired=f.vel.clone().setLength(maxS);
+    /* heading can only change so fast — they swim where they face */
+    const curA=Math.atan2(f.vel.z,f.vel.x),desA=Math.atan2(desired.z,desired.x);
+    let dA=desA-curA;while(dA>Math.PI)dA-=Math.PI*2;while(dA<-Math.PI)dA+=Math.PI*2;
+    dA=clamp(dA,-3*dt,3*dt);
+    const turnA=curA+dA;
+    const len=desired.length();
+    f.vel.x=Math.cos(turnA)*len;f.vel.z=Math.sin(turnA)*len;
+    f.vel.y=clamp(f.vel.y,-maxS*.4,maxS*.4);
     f.pos.addScaledVector(f.vel,dt);
-    const rad=Math.hypot(f.pos.x,f.pos.z);
-    if(rad<inner){const s=inner/(rad||.001);f.pos.x*=s;f.pos.z*=s;}
-    if(rad>TANK_R-.55){const s=(TANK_R-.55)/rad;f.pos.x*=s;f.pos.z*=s;}
     f.pos.y=clamp(f.pos.y,-TANK_H*.42,TANK_H*.42);
   }
 
-  /* hard separation — every fish owns its space */
+  /* ═ hard separation — every fish owns its space ═ */
   for(let i=0;i<minnows.length;i++)for(let j=i+1;j<minnows.length;j++){
     const a=minnows[i],b=minnows[j];
     const dx=b.pos.x-a.pos.x,dy=b.pos.y-a.pos.y,dz=b.pos.z-a.pos.z;
-    const d2=dx*dx+dy*dy+dz*dz,rr=MR*2+.03;
+    const d2=dx*dx+dy*dy+dz*dz,rr=(a.space+b.space)*.5+.12;
     if(d2>=rr*rr)continue;
     if(d2<1e-6){a.pos.x+=rnd(-.02,.02);b.pos.x-=rnd(-.02,.02);continue;}
     const d=Math.sqrt(d2),push=(rr-d)/d*.5;
@@ -233,19 +261,19 @@ export function updateMoonMinnows(dt,t){
   }
   for(const m of minnows)for(const f of fish){
     const dx=m.pos.x-f.pos.x,dy=m.pos.y-f.pos.y,dz=m.pos.z-f.pos.z;
-    const d2=dx*dx+dy*dy+dz*dz,rr=f.radius+MR+.02;
+    const d2=dx*dx+dy*dy+dz*dz,rr=f.radius+MR+.03;
     if(d2>=rr*rr)continue;
     const d=Math.sqrt(d2)||.001,push=(rr-d)/d;
     m.pos.x+=dx*push;m.pos.y+=dy*push;m.pos.z+=dz*push;
   }
 
-  /* visuals */
+  /* ═ visuals — strictly forward ═ */
   for(const f of minnows){
     f.group.position.copy(f.pos);
-    A.copy(f.vel);
-    if(A.lengthSq()>.001){
-      C.copy(f.pos).add(A);
-      f.group.lookAt(fishGroup.localToWorld(C.clone()));
+    if(f.vel.lengthSq()>.0005){
+      A.copy(f.pos).add(f.vel);
+      A.y=clamp(A.y,-TANK_H*.5,TANK_H*.5);
+      f.group.lookAt(fishGroup.localToWorld(A.clone()));
     }
     const darting=f.dartT>0;
     f.phase+=dt*(3.2+f.vel.length()*3.6+(darting?14:0));
@@ -256,3 +284,7 @@ export function updateMoonMinnows(dt,t){
     if(f.spawnGrow>0){f.spawnGrow=Math.max(0,f.spawnGrow-dt*.9);f.group.scale.setScalar(1-f.spawnGrow*.85);}
   }
 }
+
+/* troupe injects the shark list (avoids an import cycle) */
+let sharkListFn=()=>[];
+export function bindSharkList(fn){sharkListFn=fn;}

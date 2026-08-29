@@ -109,7 +109,21 @@ export function syncFish(){
 export function setGlow(v){const k=v/100*2.2;for(const f of fish)for(const m of f.materials){if(!m.emissive)continue;if(m.emissive.getHex()===0&&m.color)m.emissive.copy(m.color);m.emissiveIntensity=k;}}
 export function setScale(v){for(const f of fish){f.wrapper.scale.setScalar(f.baseScale*v/100);f.radius=f.size*.3*(v/100);}}
 
+/* ═ hard separation + species school anchors (like groups with like) ═ */
+const anchors={'clownfish':new THREE.Vector3(),'butterfly-fish':new THREE.Vector3()};
+let anchorT=0;
+function driftAnchors(dt,t){
+  anchorT+=dt;
+  anchors['clownfish'].set(Math.sin(anchorT*.07)*2.7,Math.sin(anchorT*.13)*.9,Math.cos(anchorT*.07)*2.7);
+  anchors['butterfly-fish'].set(Math.sin(anchorT*.09+3.1)*2.4,Math.sin(anchorT*.11+1.1)*1.1,Math.cos(anchorT*.09+3.1)*2.4);
+  for(const an of Object.values(anchors)){
+    const h=Math.hypot(an.x,an.z);
+    if(h<1.6){an.x*=1.6/h;an.z*=1.6/h;}
+  }
+}
+
 export function updateAll(dt,t){
+  driftAnchors(dt);
   collide();
   for(const f of fish)updateFish(f,dt,t);
 }
@@ -158,6 +172,8 @@ function updatePrey(f,dt,t){
   }
   if(f.state==='feed'&&f.food&&foods.includes(f.food)&&!fleeing){B.subVectors(f.food.pos,f.pos);const d=B.length();f.acc.add(B.normalize().multiplyScalar(1.05));if(d<.12){removeFood(f.food);f.food=null;f.state='cruise';}}
   else if(f.state==='explore'&&!fleeing)f.acc.addScaledVector(f.wander,.20);
+  /* like groups with like: drift toward your own species' school */
+  if(anchors[f.species]){const swP=val('schooling')/100;f.acc.x+=(anchors[f.species].x-f.pos.x)*.3*swP;f.acc.y+=(anchors[f.species].y-f.pos.y)*.3*swP;f.acc.z+=(anchors[f.species].z-f.pos.z)*.3*swP;}
   const act=val('activity')/100;f.vel.addScaledVector(f.acc,dt);let target=f.preferred*act;if(f.state==='feed')target=1.15*act;if(fleeing)target=Math.max(target,1.35*act);if(state.shadowPlay)target=Math.max(target,1.0*Math.max(act,.8));
   if(f.vel.length()>.001){B.copy(f.vel).normalize().multiplyScalar(target);f.vel.lerp(B,Math.min(1,dt*(f.state==='feed'?4.2:1.4)));}
   if(f.vel.length()>1.45*act*(fleeing?1.25:1))f.vel.setLength(1.45*act*(fleeing?1.25:1));
