@@ -138,7 +138,7 @@ function aquariumBoundsForce(f){
   const ymax=TANK_H*.43;if(p.y>ymax-.35)force.y-=(p.y-(ymax-.35))*8;if(p.y<-ymax+.35)force.y+=(-ymax+.35-p.y)*8;
   return force;
 }
-function social(f){const align=new THREE.Vector3(),cohere=new THREE.Vector3(),sep=new THREE.Vector3();let n=0;const sch=state.shadowPlay?Math.min(1,val('schooling')/100+.30):val('schooling')/100;for(const o of fish){if(o===f||o.role==='predator')continue;B.subVectors(o.pos,f.pos);const d=B.length();if(d>.001&&d<1.45){n++;align.add(o.vel);cohere.add(o.pos);if(d<.30)sep.addScaledVector(B.normalize(),-.7);}}if(n){align.divideScalar(n).normalize().multiplyScalar(sch*.68);cohere.divideScalar(n).sub(f.pos).normalize().multiplyScalar(sch*.33);}return align.add(cohere).add(sep);}
+function social(f){const align=new THREE.Vector3(),cohSame=new THREE.Vector3(),cohOther=new THREE.Vector3(),sep=new THREE.Vector3();let nSame=0,nOther=0;const sch=state.shadowPlay?Math.min(1,val('schooling')/100+.30):val('schooling')/100;for(const o of fish){if(o===f||o.role==='predator')continue;B.subVectors(o.pos,f.pos);const d=B.length();if(d>.001&&d<1.45){if(o.species===f.species)align.add(o.vel);if(d<.30)sep.addScaledVector(B.normalize(),-.7);if(o.species===f.species){cohSame.add(o.pos);nSame++;}else{cohOther.add(o.pos);nOther++;}}}if(nSame)cohSame.divideScalar(nSame).sub(f.pos).multiplyScalar(sch*.42);if(nOther)cohOther.divideScalar(nOther).sub(f.pos).multiplyScalar(sch*.10);return align.add(cohSame.multiplyScalar(1)).add(cohOther).add(sep);}
 function currentField(p,t){const s=.12;return new THREE.Vector3((Math.sin(p.y*.8+t*.31)+Math.cos(p.z*1.4-t*.22))*.035*s,Math.sin(p.x*1.2+t*.19)*.018*s,(Math.cos(p.x*1.3-t*.27)+Math.sin(p.y*.7+t*.23))*.035*s);}
 
 function updatePrey(f,dt,t){
