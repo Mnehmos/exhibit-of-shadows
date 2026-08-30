@@ -12,7 +12,7 @@ import {speciesForIndex} from './speciesCatalog.js';
 let restockClock=0;
 
 export function initEcosystem(){
-  defineControl({id:'sharks',label:'Sharks',group:'Ecosystem',min:0,max:3,step:1,value:1,onChange:syncPredators});
+  defineControl({id:'sharks',label:'Arapaima',group:'Ecosystem',min:0,max:3,step:1,value:1,onChange:syncPredators});
   defineControl({id:'hungerRate',label:'Hunger rate',group:'Ecosystem',min:10,max:300,step:1,value:100,fmt:v=>(v/100).toFixed(2)+'×'});
   defineControl({id:'restock',label:'Hatchery',group:'Ecosystem',min:0,max:8,step:1,value:3,fmt:v=>v+'/min'});
 
@@ -63,7 +63,7 @@ export function initEcosystem(){
     const sharks=predators(),prey=preyFish();
     const avg=sharks.length?Math.round(sharks.reduce((s,x)=>s+x.energy,0)/sharks.length):100;
     const hunting=sharks.filter(s=>s.brain.mode==='hunt').length;
-    return `sharks ${sharks.length} · prey ${prey.length} · avg energy ${avg}% · hunting ${hunting}`;
+    return `arapaima ${sharks.length} · prey ${prey.length} · avg energy ${avg}% · hunting ${hunting}`;
   });
 
   syncPredators();
@@ -73,7 +73,7 @@ function syncPredators(){
   const target=Math.round(val('sharks'));
   let guard=6;
   while(predators().length<target&&guard-->0){
-    const f=spawnFish('shark');
+    const f=spawnFish('arapaima');
     if(!f)break;
   }
   const extras=predators();

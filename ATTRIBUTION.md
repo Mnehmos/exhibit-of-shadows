@@ -4,7 +4,9 @@ Code: MIT (see LICENSE). Assets below are third-party; each row lists source + l
 
 ## Assets/fish (GLB)
 
-All models by **Quaternius** — license **CC0** (public domain) — sourced via [poly.pizza](https://poly.pizza) (Quaternius packs, GLTF format):
+**Arapaima** — `arapaima.glb` (mobile variant, ~51k tris, 1K textures) — supplied by the curator from `arapaima-usable-assets.zip`; original author/source **TBC — confirm for credit**.
+
+All other models by **Quaternius** — license **CC0** (public domain) — sourced via [poly.pizza](https://poly.pizza) (Quaternius packs, GLTF format). `shark.glb` is retained on disk but unloaded since v9.7 (superseded by the arapaima).
 
 | File | Model page |
 |---|---|

@@ -3,7 +3,7 @@
 export const SPECIES=[
   {id:'clownfish',file:'clownfish.glb',length:.7,speed:1.15,share:.6,role:'prey'},
   {id:'butterfly-fish',file:'butterfly-fish.glb',length:.95,speed:1.0,share:.4,role:'prey'},
-  {id:'shark',file:'shark.glb',length:1.9,speed:.62,share:0,role:'predator',bite:18},
+  {id:'arapaima',file:'arapaima.glb',length:2.6,speed:.55,share:0,role:'predator',bite:18,sway:true},
 ];
 
 const PREY=SPECIES.filter(s=>s.role==='prey');

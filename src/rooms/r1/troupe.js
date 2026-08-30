@@ -56,6 +56,7 @@ export function createFish(species){
   inst.traverse(o=>{
     if(!o.isMesh||!o.material)return;
     o.castShadow=true;
+    o.frustumCulled=false; /* bind-pose bounds make skinned/static casters pop out of the shadow map */
     const src=(Array.isArray(o.material)?o.material:[o.material]).filter(Boolean);
     if(!src.length)return;
     const clones=src.map(m=>{
@@ -78,6 +79,7 @@ export function createFish(species){
     phase:rnd(0,6.28),decision:rnd(.25,1.2),state:'cruise',food:null,preferred:rnd(.40,.65)*species.speed};
   const clip=(tmpl.animations||[]).find(a=>/swim/i.test(a.name))||(tmpl.animations||[])[0]||null;
   if(clip){f.mixer=new THREE.AnimationMixer(inst);f.action=f.mixer.clipAction(clip);f.action.play();}
+  else if(species.sway){f.sway={phase:rnd(0,6.28),amp:.05+rnd(0,.03)};} /* static mesh: procedural body sway */
   wrap.scale.setScalar(f.baseScale*val('fishScale')/100);
   fishGroup.add(wrap);fish.push(f);
   return f;
@@ -211,7 +213,7 @@ export function updateFish(f,dt,t){
   const {TANK_R,TANK_H,LIGHT_COLUMN_R}=R1;
   if(f.role==='predator')updatePredator(f,dt);
   else updatePrey(f,dt,t);
-  const rad=Math.hypot(f.pos.x,f.pos.z),outer=TANK_R-.22,inner=LIGHT_COLUMN_R+(f.role==='predator'?.34:.22);
+  const rad=Math.hypot(f.pos.x,f.pos.z),outer=TANK_R-.22-f.radius,inner=LIGHT_COLUMN_R+(f.role==='predator'?.34+f.radius:.22);
   if(rad>outer){f.pos.x*=outer/rad;f.pos.z*=outer/rad;}if(rad<inner){const s=inner/(rad||.001);f.pos.x*=s;f.pos.z*=s;}
   f.pos.y=clamp(f.pos.y,-TANK_H*.43,TANK_H*.43);
   f.wrapper.position.copy(f.pos);
@@ -226,5 +228,10 @@ export function updateFish(f,dt,t){
   if(f.mixer){
     f.mixer.timeScale=clamp(.5+f.vel.length()*1.4,.3,2.4);
     f.mixer.update(dt);
+  }
+  if(f.sway){ /* static-mesh species: gentle yaw sway + hunt lunge bob, beat-linked to speed */
+    f.sway.phase+=dt*(1.6+f.vel.length()*2.2);
+    f.wrapper.rotateY(Math.sin(f.sway.phase)*f.sway.amp);
+    f.wrapper.rotateZ(Math.sin(f.sway.phase*.5)*f.sway.amp*.5);
   }
 }

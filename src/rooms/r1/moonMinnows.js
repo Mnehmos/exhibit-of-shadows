@@ -214,7 +214,7 @@ export function updateMoonMinnows(dt,t){
     /* calm wander */
     if(f.panic<.35){
       f.noise.x=THREE.MathUtils.lerp(f.noise.x,rnd(-1,1),dt*1.3);
-      f.acc.addScaledVector(f.noise,.4*(.45+f.bold*.55));
+      f.acc.addScaledVector(f.noise,.55*(.45+f.bold*.55));
     }
 
     /* panic compress: toward the school's own centroid, skittish hardest */
@@ -232,7 +232,7 @@ export function updateMoonMinnows(dt,t){
   for(const f of minnows){
     f.vel.addScaledVector(f.acc,dt);
     const sp=f.vel.length();
-    const minS=.3,maxS=f.dartT>0?1.9:(f.panic>.5?1.45:.9);
+    const minS=.5,maxS=f.dartT>0?1.9:(f.panic>.5?1.5:.9);
     let desired=f.vel;
     if(sp<minS)desired=f.vel.clone().setLength(minS);
     if(sp>maxS)desired=f.vel.clone().setLength(maxS);
@@ -252,7 +252,7 @@ export function updateMoonMinnows(dt,t){
   for(let i=0;i<minnows.length;i++)for(let j=i+1;j<minnows.length;j++){
     const a=minnows[i],b=minnows[j];
     const dx=b.pos.x-a.pos.x,dy=b.pos.y-a.pos.y,dz=b.pos.z-a.pos.z;
-    const d2=dx*dx+dy*dy+dz*dz,rr=(a.space+b.space)*.5+.12;
+    const d2=dx*dx+dy*dy+dz*dz,rr=(a.space+b.space)*.5*.25+.17;
     if(d2>=rr*rr)continue;
     if(d2<1e-6){a.pos.x+=rnd(-.02,.02);b.pos.x-=rnd(-.02,.02);continue;}
     const d=Math.sqrt(d2),push=(rr-d)/d*.5;
